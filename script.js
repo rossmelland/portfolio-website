@@ -274,12 +274,32 @@ function initCursor() {
 }
 
 /* ============================================================
+   WORK GRID — shuffle card order on every page load
+   Numbers stay sequential by position (CSS reads data-index).
+   ============================================================ */
+
+function shuffleWorkCards() {
+  const grid = document.querySelector('.work__grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.work__card'));
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  cards.forEach((card, i) => {
+    grid.appendChild(card);
+    card.dataset.index = String(i + 1).padStart(2, '0');
+  });
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
   initCursor();
   initHeroBg();
+  shuffleWorkCards();
   animateHero();
   applyFadeClasses();
 

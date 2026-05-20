@@ -857,7 +857,7 @@ body.project-page {
 
 .project-meta {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: var(--space-md);
 }
 
@@ -893,6 +893,15 @@ body.project-page {
 
 .project-body__copy p:last-child {
   margin-bottom: 0;
+}
+
+.project-credit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3A3A35;
+  margin-top: var(--space-md);
 }
 
 /* Nav back link */
@@ -1022,15 +1031,9 @@ body.project-page {
 }
 
 .client__logo {
-  height: 28px;
+  height: 40px;
   width: auto;
   object-fit: contain;
-  opacity: 0.45;
-  transition: opacity var(--transition);
-}
-
-.client__item:hover .client__logo {
-  opacity: 0.75;
 }
 
 .client__name {
