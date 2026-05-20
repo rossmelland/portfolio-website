@@ -58,7 +58,6 @@ const fadeTargets = [
   '.about__credentials',
   '.contact__header',
   '.contact__body',
-  '.bridge__text',
 ];
 
 function applyFadeClasses() {
@@ -119,7 +118,7 @@ function initCardTilt() {
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReduced) return;
 
-  document.querySelectorAll('.work__card').forEach(card => {
+  document.querySelectorAll('.work__card, .service').forEach(card => {
     card.addEventListener('mousemove', e => {
       if (!card.classList.contains('in-view')) return;
 
