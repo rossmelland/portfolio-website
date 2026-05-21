@@ -4,7 +4,9 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\rossm\\\\portfolio-website\" -Recurse -Force)",
       "Bash(Select-Object FullName, PSIsContainer)",
       "Bash(Sort-Object FullName)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(node --version; npx --version)",
+      "PowerShell($job = Start-Job { Set-Location \"C:\\\\Users\\\\rossm\\\\portfolio-website\"; npx serve -l 8743 . }; Start-Sleep 5; Invoke-WebRequest -Uri \"http://localhost:8743/jet-man.html\" -UseBasicParsing | Select-Object -ExpandProperty StatusCode)"
     ]
   }
 }
