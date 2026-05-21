@@ -87,7 +87,6 @@ function observeFadeElements() {
 
 function animateHero() {
   const items = [
-    '.hero__meta',
     '.hero__name',
     '.hero__tagline',
     '.hero__actions',
@@ -196,6 +195,7 @@ function initHeroParallax() {
    ============================================================ */
 
 function initHeroTextureFade() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const hero = document.querySelector('.hero');
   if (!hero) return;
 
