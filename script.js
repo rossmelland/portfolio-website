@@ -218,6 +218,60 @@ function initCursor() {
 }
 
 /* ============================================================
+   HERO LOGO — mouse-proximity liquid distortion
+   ============================================================ */
+
+function initHeroLogoLiquid() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const hero = document.getElementById('hero');
+  const fx = document.getElementById('heroLogoFx');
+  if (!hero || !fx) return;
+
+  const filterSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  filterSvg.setAttribute('style', 'position:absolute;width:0;height:0;pointer-events:none;overflow:hidden');
+  filterSvg.setAttribute('aria-hidden', 'true');
+  filterSvg.innerHTML = `<defs>
+    <filter id="heroLiquidFilter" color-interpolation-filters="sRGB" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015 0.035" numOctaves="2" seed="4" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <feGaussianBlur in="displaced" stdDeviation="2.2" />
+    </filter>
+  </defs>`;
+  document.body.appendChild(filterSvg);
+
+  let x = -9999;
+  let y = -9999;
+  let ticking = false;
+
+  function apply() {
+    ticking = false;
+    fx.style.setProperty('--fx-x', `${x}px`);
+    fx.style.setProperty('--fx-y', `${y}px`);
+  }
+
+  function schedule() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(apply);
+    }
+  }
+
+  hero.addEventListener('mousemove', e => {
+    const rect = fx.getBoundingClientRect();
+    x = e.clientX - rect.left;
+    y = e.clientY - rect.top;
+    schedule();
+  });
+
+  hero.addEventListener('mouseleave', () => {
+    x = -9999;
+    y = -9999;
+    schedule();
+  });
+}
+
+/* ============================================================
    CONTACT FORM — async Formspree submission
    ============================================================ */
 
@@ -280,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
   animateNav();
   animateHero();
   initHeroEmail();
+  initHeroLogoLiquid();
   applyFadeClasses();
   applyStaggerDelays();
 
