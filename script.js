@@ -8,7 +8,7 @@ const navLinks = document.getElementById('navLinks');
 
 function updateNavTheme() {
   const navBottom = nav.offsetHeight;
-  const lightSections = document.querySelectorAll('.services, .contact, .project-main, .project-back');
+  const lightSections = document.querySelectorAll('.project-main, .project-back');
   let overLight = false;
   lightSections.forEach(section => {
     const rect = section.getBoundingClientRect();
@@ -45,19 +45,19 @@ if (navLinks) {
 }
 
 /* ============================================================
-   SCROLL ANIMATIONS — fade-up on enter
+   SCROLL ANIMATIONS — fade-up, play once
    ============================================================ */
 
 const fadeTargets = [
   '.section__header',
   '.work__card',
-  '.service',
+  '.award',
   '.about__image-wrap',
   '.about__title',
   '.about__bio',
   '.about__credentials',
-  '.contact__header',
-  '.contact__body',
+  '.footer__upper',
+  '.footer__lower',
 ];
 
 function applyFadeClasses() {
@@ -70,34 +70,67 @@ function applyFadeClasses() {
 
 function observeFadeElements() {
   const observer = new IntersectionObserver(
-    entries => {
+    (entries, obs) => {
       entries.forEach(entry => {
-        entry.target.classList.toggle('in-view', entry.isIntersecting);
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in-view');
+        obs.unobserve(entry.target);
       });
     },
-    { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
   );
-
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 }
 
+/* Apply JS-driven stagger delays after shuffle so order is correct */
+function applyStaggerDelays() {
+  // Work cards sit in a 2-up grid — stagger the right-column card in each row
+  document.querySelectorAll('.work__card').forEach((el, i) => {
+    el.style.transitionDelay = `${(i % 2) * 0.12}s`;
+  });
+
+  // Award rows reveal sequentially
+  document.querySelectorAll('.award').forEach((el, i) => {
+    el.style.transitionDelay = `${i * 0.08}s`;
+  });
+}
+
 /* ============================================================
-   HERO — stagger children in on load
+   NAV — fade in on load
+   ============================================================ */
+
+function animateNav() {
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const el = document.querySelector('.nav__inner');
+  if (!el) return;
+  el.style.opacity = '0';
+  el.style.transition = `opacity 0.7s ${ease}`;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+    });
+  });
+}
+
+/* ============================================================
+   HERO — stagger fade-up on load
    ============================================================ */
 
 function animateHero() {
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const dur  = '0.85s';
   const items = [
-    '.hero__name',
-    '.hero__tagline',
-    '.hero__actions',
+    { selector: '.hero__logo-wrap', delay: 0.05 },
+    { selector: '.hero__contact',   delay: 0.22 },
+    { selector: '.hero__bio',       delay: 0.32 },
   ];
 
-  items.forEach((selector, i) => {
+  items.forEach(({ selector, delay }) => {
     const el = document.querySelector(selector);
     if (!el) return;
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
-    el.style.transition = `opacity 0.8s ease ${i * 0.12}s, transform 0.8s ease ${i * 0.12}s`;
+    el.style.transition = `opacity ${dur} ${ease} ${delay}s, transform ${dur} ${ease} ${delay}s`;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         el.style.opacity = '1';
@@ -108,104 +141,80 @@ function animateHero() {
 }
 
 /* ============================================================
-   WORK CARDS — hover tilt (subtle)
-   Deferred until card is in-view to avoid conflicting with
-   the fade-up animation (inline transform would override it).
+   HERO EMAIL — copy to clipboard
    ============================================================ */
 
-function initCardTilt() {
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (prefersReduced) return;
+function initHeroEmail() {
+  const btn    = document.getElementById('heroEmail');
+  const copied = document.getElementById('heroEmailCopied');
+  if (!btn || !copied) return;
 
-  document.querySelectorAll('.work__card, .service').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      if (!card.classList.contains('in-view')) return;
-
-      card.style.transition = 'none';
-      const rect = card.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 11;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * -9;
-      card.style.transform = `perspective(700px) rotateY(${x}deg) rotateX(${y}deg) translateZ(10px)`;
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transition = 'transform 0.5s ease';
-      card.style.transform = '';
-    });
+  btn.addEventListener('click', async () => {
+    const address = 'rossmelland@gmail.com';
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = address;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copied.classList.add('visible');
+    setTimeout(() => copied.classList.remove('visible'), 2000);
   });
 }
 
 /* ============================================================
-   WATER IMAGE POOL — shared by hero and about section
+   CUSTOM CURSOR — smooth-follow circle with blend mode
    ============================================================ */
 
-const WATER_IMAGES = [
-  'images/anatoly-maltsev-oegxrSz1iAw-unsplash.jpg',
-  'images/clement-m-0vOoWtDiKXY-unsplash.jpg',
-  'images/fabian-jones-HWe3f8xIJq0-unsplash.jpg',
-  'images/isi-parente-MBFdtqJr3kE-unsplash.jpg',
-  'images/jani-petteri-tammi-9ifVUS_ooqY-unsplash.jpg',
-  'images/phil-desforges-FHTYd6wvPmM-unsplash.jpg',
-];
+function initCursor() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-/* ============================================================
-   HERO BACKGROUND — random water image on load
-   ============================================================ */
+  /* Inject SVG filter — displacement map + blur creates the grainy,
+     feathered edge. Small area (26px) keeps it near-zero cost. */
+  const filterSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  filterSvg.setAttribute('style', 'position:absolute;width:0;height:0;pointer-events:none;overflow:hidden');
+  filterSvg.setAttribute('aria-hidden', 'true');
+  filterSvg.innerHTML = `<defs>
+    <filter id="cursor-grain" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="12" result="noise"/>
+      <feComposite in="SourceGraphic" in2="noise" operator="arithmetic" k1="0" k2="0.73" k3="0.27" k4="0" result="textured"/>
+      <feComposite in="textured" in2="SourceGraphic" operator="in" result="clipped"/>
+      <feGaussianBlur in="clipped" stdDeviation="2"/>
+    </filter>
+    <filter id="ticker-grain" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="12" result="noise"/>
+      <feComposite in="SourceGraphic" in2="noise" operator="arithmetic" k1="0" k2="0.94" k3="0.06" k4="0" result="textured"/>
+      <feComposite in="textured" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>`;
+  document.body.appendChild(filterSvg);
 
-function initHeroBg() {
-  const hero = document.querySelector('.hero');
-  if (!hero) return;
+  const dot = document.createElement('div');
+  dot.className = 'cursor';
+  document.body.appendChild(dot);
 
-  const idx = Math.floor(Math.random() * WATER_IMAGES.length);
-  hero.style.setProperty('--hero-bg-image', `url('${WATER_IMAGES[idx]}')`);
-}
+  document.addEventListener('mousemove', e => {
+    dot.style.transform = `translate(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%))`;
+  });
 
+  document.addEventListener('mouseleave', () => {
+    dot.style.transform = 'translate(-200px, -200px)';
+  });
 
-/* ============================================================
-   HERO PARALLAX — text floats slower than background
-   ============================================================ */
+  const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card, .award';
 
-function initHeroParallax() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest(HOVER_TARGETS)) dot.classList.add('cursor--expanded');
+  });
 
-  const hero  = document.querySelector('.hero');
-  const inner = document.querySelector('.hero__inner');
-  if (!hero || !inner) return;
-
-  let ticking = false;
-
-  function update() {
-    const y = window.scrollY;
-    if (y <= hero.offsetHeight) {
-      inner.style.transform = `translateY(${y * 0.18}px)`;
-    }
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(update);
-      ticking = true;
-    }
-  }, { passive: true });
-}
-
-/* ============================================================
-   HERO TEXTURE — fade out on scroll
-   ============================================================ */
-
-function initHeroTextureFade() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const hero = document.querySelector('.hero');
-  if (!hero) return;
-
-  function update() {
-    const progress = Math.min(window.scrollY / (hero.offsetHeight * 0.6), 1);
-    hero.style.setProperty('--hero-texture-opacity', 1 - progress);
-  }
-
-  window.addEventListener('scroll', update, { passive: true });
-  update();
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
+  });
 }
 
 /* ============================================================
@@ -244,38 +253,7 @@ function initContactForm() {
 }
 
 /* ============================================================
-   CUSTOM CURSOR — instant tracking dot with hover expand
-   ============================================================ */
-
-function initCursor() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-  const dot = document.createElement('div');
-  dot.className = 'cursor';
-  document.body.appendChild(dot);
-
-  document.addEventListener('mousemove', e => {
-    dot.style.transform = `translate(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%))`;
-  });
-
-  document.addEventListener('mouseleave', () => {
-    dot.style.transform = 'translate(-200px, -200px)';
-  });
-
-  const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card';
-
-  document.addEventListener('mouseover', e => {
-    if (e.target.closest(HOVER_TARGETS)) dot.classList.add('cursor--expanded');
-  });
-
-  document.addEventListener('mouseout', e => {
-    if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
-  });
-}
-
-/* ============================================================
    WORK GRID — shuffle card order on every page load
-   Numbers stay sequential by position (CSS reads data-index).
    ============================================================ */
 
 function shuffleWorkCards() {
@@ -298,10 +276,12 @@ function shuffleWorkCards() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initCursor();
-  initHeroBg();
   shuffleWorkCards();
+  animateNav();
   animateHero();
+  initHeroEmail();
   applyFadeClasses();
+  applyStaggerDelays();
 
   if ('IntersectionObserver' in window) {
     observeFadeElements();
@@ -309,8 +289,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.fade-up').forEach(el => el.classList.add('in-view'));
   }
 
-  initCardTilt();
   initContactForm();
-  initHeroParallax();
-  initHeroTextureFade();
 });

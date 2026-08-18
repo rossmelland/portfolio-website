@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ross Melland — Senior Art Director, Amsterdam</title>
   <meta name="description" content="Ross Melland is a Senior Art Director based in Amsterdam, specialising in art direction, brand identity, licensing, and creative consultancy." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="styles.css" />
@@ -17,13 +14,14 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="nav__inner">
-      <a href="#" class="nav__logo">Ross Melland</a>
+      <a href="index.html" class="nav__logo">
+        <img src="images/Melland logo.png" alt="Ross Melland" />
+      </a>
       <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span>
       </button>
       <ul class="nav__links" id="navLinks">
         <li><a href="#work">Work</a></li>
-        <li><a href="#services">Services</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#contact" class="nav__cta">Contact</a></li>
       </ul>
@@ -34,20 +32,27 @@
 
     <!-- Hero -->
     <section class="hero" id="hero">
-      <div class="hero__inner container">
-        <h1 class="hero__name">
-          <span>Ross</span>
-          <span class="hero__name--italic">Melland</span>
-        </h1>
-        <p class="hero__tagline">Senior Art Director — Amsterdam NL</p>
-        <div class="hero__actions">
-          <a href="#work" class="btn btn--primary">View Work</a>
-          <a href="#contact" class="btn btn--ghost">Get in Touch</a>
-        </div>
+      <div class="hero__logo-wrap">
+        <img src="images/Melland logo.png" alt="Ross Melland" class="hero__logo" />
       </div>
-      <div class="hero__scroll-hint" aria-hidden="true">
-        <span>Scroll</span>
-        <div class="hero__scroll-line"></div>
+      <div class="hero__bottom container">
+        <div class="hero__contact">
+          <div class="hero__email-wrap">
+            <button class="hero__email" id="heroEmail" aria-label="Copy email address">
+              rossmelland@gmail.com
+              <svg class="hero__email-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <span class="hero__copied" id="heroEmailCopied" aria-live="polite">Copied!</span>
+          </div>
+          <div class="hero__social-links">
+            <a href="https://www.linkedin.com/in/rossmelland" target="_blank" rel="noopener noreferrer" class="hero__social-link">LinkedIn</a>
+            <a href="https://www.behance.net/rossmelland" target="_blank" rel="noopener noreferrer" class="hero__social-link">Behance</a>
+          </div>
+        </div>
+        <p class="hero__bio">Hello. I am an award-winning freelance art director &amp; designer based in Amsterdam.</p>
       </div>
     </section>
 
@@ -55,7 +60,7 @@
     <section class="section work" id="work">
       <div class="container">
         <div class="section__header">
-          <h2 class="section__title">Projects</h2>
+          <h2 class="section__title">Work.</h2>
         </div>
         <div class="work__grid">
 
@@ -63,214 +68,197 @@
             <a href="gynaGuard.html" class="work__card-link" aria-label="View project: #12OfficialVaginas">
               <div class="work__card-image">
                 <img src="images/projects/gynaGuard-hero.jpg" alt="#12OfficialVaginas — GynaGuard" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">#12OfficialVaginas</h3>
+                  <span class="work__card-overlay-cat">Art Direction / Campaign Creative</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Art Direction / Campaign Creative</span>
-                <span class="work__card-year">2018</span>
-              </div>
-              <h3 class="work__card-title">#12OfficialVaginas</h3>
-              <p class="work__card-desc">A pan-African campaign that put vaginal health on billboards across South Africa. Silver Loerie and Gold Assegai 2018.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="02">
             <a href="jet-man.html" class="work__card-link" aria-label="View project: Jet Better Man">
               <div class="work__card-image">
                 <img src="images/projects/jet-man-hero.png" alt="Jet Better Man" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Jet Better Man</h3>
+                  <span class="work__card-overlay-cat">Art Direction / TVC</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Art Direction / TVC</span>
-                <span class="work__card-year">2018</span>
-              </div>
-              <h3 class="work__card-title">Jet Better Man</h3>
-              <p class="work__card-desc">A TVC built around a true story. One man's decision to change his life — starting with how he dressed.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="03">
             <a href="jet-instagram.html" class="work__card-link" aria-label="View project: Jet Man Instagram">
               <div class="work__card-image">
                 <img src="images/projects/jet-instagram-hero.jpg" alt="Jet Man Instagram" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Jet Man Instagram</h3>
+                  <span class="work__card-overlay-cat">Art Direction / Social Content</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Art Direction / Social Content</span>
-                <span class="work__card-year">2018</span>
-              </div>
-              <h3 class="work__card-title">Jet Man Instagram</h3>
-              <p class="work__card-desc">Art direction and styling of Jet Man social photography.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="04">
             <a href="jet-pos.html" class="work__card-link" aria-label="View project: Jet Better Man — In-Store POS">
               <div class="work__card-image">
                 <img src="images/projects/jet-pos-hero.jpg" alt="Jet Better Man — In-Store POS" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Jet Better Man — In-Store POS</h3>
+                  <span class="work__card-overlay-cat">Art Direction / POS</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Art Direction / POS</span>
-                <span class="work__card-year">2018</span>
-              </div>
-              <h3 class="work__card-title">Jet Better Man — In-Store POS</h3>
-              <p class="work__card-desc">Point of sale collateral that accompanied the Better Man TVC campaign.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="05">
             <a href="licensing.html" class="work__card-link" aria-label="View project: Licensing & Product Development">
               <div class="work__card-image">
                 <img src="images/projects/licensing-hero.jpg" alt="Licensing & Product Development" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Licensing &amp; Product Development</h3>
+                  <span class="work__card-overlay-cat">Product Development / Licensing</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Product Development / Licensing</span>
-                <span class="work__card-year">2024</span>
-              </div>
-              <h3 class="work__card-title">Licensing &amp; Product Development</h3>
-              <p class="work__card-desc">Licensed product development across major entertainment franchises — from concept and design direction through to production.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="06">
             <a href="spot-the-crimes.html" class="work__card-link" aria-label="View project: Spot the Crimes">
               <div class="work__card-image">
                 <img src="images/projects/spot-the-crimes-hero.jpg" alt="Spot the Crimes — Crime Line South Africa" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Spot the Crimes</h3>
+                  <span class="work__card-overlay-cat">Interactive Print</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Interactive Print</span>
-                <span class="work__card-year">2013</span>
-              </div>
-              <h3 class="work__card-title">Spot the Crimes</h3>
-              <p class="work__card-desc">A "Where's Wally?" style print ad with 7 hidden crimes. Scan the ad to reveal them.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="07">
             <a href="jet-summer.html" class="work__card-link" aria-label="View project: Jet Say Yes to Summer">
               <div class="work__card-image">
                 <img src="images/projects/jet-summer-hero.png" alt="Jet Say Yes to Summer" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Jet Say Yes to Summer</h3>
+                  <span class="work__card-overlay-cat">TVC</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">TVC</span>
-                <span class="work__card-year">2018</span>
-              </div>
-              <h3 class="work__card-title">Jet Say Yes to Summer</h3>
-              <p class="work__card-desc">The joy and anticipation of getting dressed for a summer's day, captured for Jet Clothing.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="08">
             <a href="lg-ziyawa.html" class="work__card-link" aria-label="View project: LG Ziyawa">
               <div class="work__card-image">
                 <img src="images/projects/lg-ziyawa-hero.png" alt="LG Ziyawa" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">LG Ziyawa</h3>
+                  <span class="work__card-overlay-cat">Social Media</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Social Media</span>
-                <span class="work__card-year">2013</span>
-              </div>
-              <h3 class="work__card-title">LG Ziyawa</h3>
-              <p class="work__card-desc">How do you showcase great sound on a bad speaker? Fill it with paint, glitter and powder — and film it.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="09">
             <a href="wooj.html" class="work__card-link" aria-label="View project: WOOJ Dog Treats">
               <div class="work__card-image">
                 <img src="images/projects/wooj-hero.jpg" alt="WOOJ Dog Treats" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">WOOJ Dog Treats</h3>
+                  <span class="work__card-overlay-cat">Branding / Packaging Design</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">Branding / Packaging Design</span>
-                <span class="work__card-year">2026</span>
-              </div>
-              <h3 class="work__card-title">WOOJ Dog Treats</h3>
-              <p class="work__card-desc">WOOJ isn't dog food. They're a dog treats brand. Only treats.</p>
-            </div>
           </article>
 
           <article class="work__card" data-index="10">
             <a href="silent-killer.html" class="work__card-link" aria-label="View project: Silent Killer">
               <div class="work__card-image">
                 <img src="images/projects/silent-killer-hero.png" alt="Silent Killer — Heart and Stroke Foundation South Africa" class="work__card-img" />
-                <div class="work__card-overlay"><span>View Project</span></div>
+                <div class="work__card-overlay">
+                  <h3 class="work__card-overlay-title">Silent Killer</h3>
+                  <span class="work__card-overlay-cat">TVC</span>
+                </div>
               </div>
             </a>
-            <div class="work__card-info">
-              <div class="work__card-info-top">
-                <span class="work__card-category">TVC</span>
-                <span class="work__card-year">2009</span>
-              </div>
-              <h3 class="work__card-title">Silent Killer</h3>
-              <p class="work__card-desc">Obesity surpassed smoking as the leading cause of heart disease. A campaign about the devil we know, and the devil we don't.</p>
-            </div>
           </article>
 
         </div>
       </div>
     </section>
 
-    <!-- Services -->
-    <section class="section services" id="services">
+    <!-- Clients ticker -->
+    <section class="clients">
+      <div class="clients__track-wrap">
+        <div class="clients__track">
+
+          <div class="clients__set">
+            <div class="client__item"><img src="images/logos/nissan-logo.png" alt="Nissan" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/kfc-logo.png" alt="KFC" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/jet-logo.png" alt="Jet" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/amstel-logo.png" alt="Amstel" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/paramount-logo.png" alt="Paramount" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/hasbro-logo.png" alt="Hasbro" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/wednesday-logo.png" alt="Wednesday" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/mgm-logo.png" alt="MGM" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/smeg-logo.png" alt="Smeg" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/peanuts-logo.png" alt="Peanuts" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/lg-logo.png" alt="LG" class="client__logo" /></div>
+          </div>
+
+          <div class="clients__set" aria-hidden="true">
+            <div class="client__item"><img src="images/logos/nissan-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/kfc-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/jet-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/amstel-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/paramount-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/hasbro-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/wednesday-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/mgm-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/smeg-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/peanuts-logo.png" alt="" class="client__logo" /></div>
+            <div class="client__item"><img src="images/logos/lg-logo.png" alt="" class="client__logo" /></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Awards & Recognition -->
+    <section class="section awards" id="awards">
       <div class="container">
         <div class="section__header">
-          <h2 class="section__title">Services</h2>
+          <h2 class="section__title">Awards &amp; Recognition.</h2>
         </div>
-        <div class="services__grid">
+        <div class="awards__list">
 
-          <div class="service" data-index="01">
-            <div class="service__number">01</div>
-            <div class="service__body">
-              <h3 class="service__title">Art Direction<br />&amp; Campaign Creative</h3>
-              <p class="service__desc">From concept to execution — directing still and moving image work for advertising, editorial, and brand campaigns. I shape the visual narrative from first brief to final frame.</p>
-            </div>
+          <div class="award">
+            <span class="award__name">Brands Untapped 100</span>
+            <span class="award__org">Brands Untapped · 2024</span>
+            <span class="award__desc">A celebration of 100 designers, product developers and creatives in the brand licensing industry who have excelled over the last 12 months</span>
+            <span class="award__year">2024</span>
           </div>
 
-          <div class="service" data-index="02">
-            <div class="service__number">02</div>
-            <div class="service__body">
-              <h3 class="service__title">Brand Identity<br />&amp; Design</h3>
-              <p class="service__desc">Building coherent visual systems that express what a brand truly stands for. Logo, typography, colour, and the rules that keep it all together across every touchpoint.</p>
-            </div>
+          <div class="award">
+            <span class="award__name">Gold Assegai, Social Media</span>
+            <span class="award__org">Assegai Awards South Africa · 2019</span>
+            <span class="award__desc">Awarded for the GynaGuard digital campaign</span>
+            <span class="award__year">2019</span>
           </div>
 
-          <div class="service" data-index="03">
-            <div class="service__number">03</div>
-            <div class="service__body">
-              <h3 class="service__title">Licensing<br />&amp; Product Development</h3>
-              <p class="service__desc">Translating brand equity into physical product. I work with manufacturers and rights-holders to develop licensed collections that feel intentional, on-brand, and commercially viable.</p>
-            </div>
+          <div class="award">
+            <span class="award__name">Silver New Generation</span>
+            <span class="award__org">New Generation Awards · 2019</span>
+            <span class="award__desc">Awarded for the GynaGuard digital campaign</span>
+            <span class="award__year">2019</span>
           </div>
 
-          <div class="service" data-index="04">
-            <div class="service__number">04</div>
-            <div class="service__body">
-              <h3 class="service__title">Creative<br />Consultancy</h3>
-              <p class="service__desc">Strategic creative support for brands navigating change. Whether repositioning, entering a new market, or building an in-house creative function, I bring clarity and direction.</p>
-            </div>
+          <div class="award">
+            <span class="award__name">Silver Loerie, Social Media Campaign</span>
+            <span class="award__org">Loerie Awards · 2019</span>
+            <span class="award__desc">Awarded for the GynaGuard social media campaign</span>
+            <span class="award__year">2019</span>
           </div>
 
         </div>
@@ -316,107 +304,38 @@
       </div>
     </section>
 
-    <!-- Clients ticker -->
-    <section class="clients">
-      <div class="clients__track-wrap">
-        <div class="clients__track">
-
-          <div class="clients__set">
-            <div class="client__item"><img src="images/logos/nissan-logo.png" alt="Nissan" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/kfc-logo.png" alt="KFC" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/jet-logo.png" alt="Jet" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/amstel-logo.png" alt="Amstel" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/paramount-logo.png" alt="Paramount" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/hasbro-logo.png" alt="Hasbro" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/wednesday-logo.png" alt="Wednesday" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/mgm-logo.png" alt="MGM" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/smeg-logo.png" alt="Smeg" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/peanuts-logo.png" alt="Peanuts" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/lg-logo.png" alt="LG" class="client__logo" /></div>
-          </div>
-
-          <!-- Duplicate set for seamless loop — aria-hidden so screen readers skip it -->
-          <div class="clients__set" aria-hidden="true">
-            <div class="client__item"><img src="images/logos/nissan-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/kfc-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/jet-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/amstel-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/paramount-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/hasbro-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/wednesday-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/mgm-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/smeg-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/peanuts-logo.png" alt="" class="client__logo" /></div>
-            <div class="client__item"><img src="images/logos/lg-logo.png" alt="" class="client__logo" /></div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- Contact -->
-    <section class="section contact" id="contact">
-      <div class="container">
-        <div class="contact__inner">
-          <div class="contact__header">
-            <h2 class="contact__title">Let's connect!</h2>
-            <div class="contact__availability">
-              <span class="availability-dot" aria-hidden="true"></span>
-              <span>Available for new projects</span>
-            </div>
-          </div>
-          <div class="contact__body">
-            <p class="contact__intro">
-              I'm available for freelance projects, consultancy, and long-term creative partnerships. Drop me a line and let's talk.
-            </p>
-            <!-- FORMSPREE: replace YOUR_FORM_ID with your form ID from formspree.io -->
-            <form class="contact__form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
-              <div class="form__row">
-                <label class="form__label" for="name">Name</label>
-                <input class="form__input" type="text" id="name" name="name" required placeholder="Your name" autocomplete="name" />
-              </div>
-              <div class="form__row">
-                <label class="form__label" for="email">Email</label>
-                <input class="form__input" type="email" id="email" name="email" required placeholder="your@email.com" autocomplete="email" />
-              </div>
-              <div class="form__row">
-                <label class="form__label" for="message">Message</label>
-                <textarea class="form__input form__textarea" id="message" name="message" required placeholder="Tell me about your project…" rows="4"></textarea>
-              </div>
-              <button type="submit" class="btn form__submit">Send Message</button>
-            </form>
-            <div class="contact__links">
-              <a href="mailto:rossmelland@gmail.com" class="contact__link">
-                <span class="contact__link-label">Email</span>
-                <span class="contact__link-value">rossmelland@gmail.com</span>
-                <svg class="contact__link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-              </a>
-              <a href="https://www.linkedin.com/in/rossmelland" target="_blank" rel="noopener noreferrer" class="contact__link">
-                <span class="contact__link-label">LinkedIn</span>
-                <span class="contact__link-value">linkedin.com/in/rossmelland</span>
-                <svg class="contact__link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-              </a>
-              <a href="https://www.behance.net/rossmelland" target="_blank" rel="noopener noreferrer" class="contact__link">
-                <span class="contact__link-label">Behance</span>
-                <span class="contact__link-value">behance.net/rossmelland</span>
-                <svg class="contact__link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
   </main>
 
-  <!-- Footer -->
-  <footer class="footer">
+  <!-- Footer / Contact -->
+  <footer class="footer" id="contact">
     <div class="container">
-      <div class="footer__inner">
-        <span class="footer__name">Ross Melland</span>
-        <span class="footer__copy">&copy; 2026 — All rights reserved</span>
-        <span class="footer__location">Amsterdam, NL</span>
+
+      <div class="footer__upper">
+        <h2 class="footer__heading">Interested in working together?<br />I would love to hear from you.</h2>
+        <div class="footer__actions">
+          <a href="mailto:rossmelland@gmail.com" class="footer__btn">Say "Hi!"</a>
+          <div class="footer__avail">
+            <span class="footer__avail-dot"></span>
+            <span class="footer__avail-text">Available for work</span>
+          </div>
+        </div>
       </div>
+
+      <div class="footer__lower">
+        <div class="footer__contact-list">
+          <a href="tel:+31627154831" class="footer__contact-item">+31 62 715 4831</a>
+          <a href="mailto:rossmelland@gmail.com" class="footer__contact-item">rossmelland@gmail.com</a>
+          <a href="https://www.linkedin.com/in/rossmelland" target="_blank" rel="noopener noreferrer" class="footer__contact-item">LinkedIn</a>
+          <a href="https://www.behance.net/rossmelland" target="_blank" rel="noopener noreferrer" class="footer__contact-item">Behance</a>
+        </div>
+
+        <div class="footer__legal">
+          <span>All rights reserved.</span>
+          <span>Ross Melland ©2026</span>
+        </div>
+      </div>
+
     </div>
   </footer>
 
