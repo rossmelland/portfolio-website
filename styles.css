@@ -352,27 +352,10 @@ ul { list-style: none; }
   padding: var(--space-lg) var(--space-md);
 }
 
-.hero__logo-fx {
-  --fx-x: -9999px;
-  --fx-y: -9999px;
-  --fx-r: clamp(46px, 8vw, 110px);
-  position: relative;
-  display: grid;
-  width: clamp(404px, 81vw, 1242px);
-}
-
 .hero__logo {
-  grid-area: 1 / 1;
-  width: 100%;
+  width: clamp(404px, 81vw, 1242px);
   height: auto;
   display: block;
-}
-
-.hero__logo--liquid {
-  filter: url(#heroLiquidFilter);
-  -webkit-mask-image: radial-gradient(circle var(--fx-r) at var(--fx-x) var(--fx-y), black 0%, black 60%, transparent 100%);
-  mask-image: radial-gradient(circle var(--fx-r) at var(--fx-x) var(--fx-y), black 0%, black 60%, transparent 100%);
-  pointer-events: none;
 }
 
 .hero__bottom {
@@ -484,7 +467,7 @@ ul { list-style: none; }
     font-size: 1.625rem;
   }
 
-  .hero__logo-fx {
+  .hero__logo {
     width: clamp(269px, 81vw, 621px);
   }
 }
