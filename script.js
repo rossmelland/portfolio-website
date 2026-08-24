@@ -168,7 +168,7 @@ function initHeroEmail() {
 }
 
 /* ============================================================
-   CUSTOM CURSOR — smooth-follow circle with blend mode
+   CUSTOM CURSOR — hand-drawn arrow with blend mode
    ============================================================ */
 
 function initCursor() {
@@ -187,27 +187,32 @@ function initCursor() {
   </defs>`;
   document.body.appendChild(filterSvg);
 
-  /* Print registration-mark cursor: circle + crosshair, quartered
-     black/white. mix-blend-mode: difference (set in CSS) makes the
-     black quadrants pass the backdrop through unchanged and the white
-     quadrants/lines invert it, so the mark stays visible on any
-     background while keeping the quartered silhouette. */
+  /* Hand-drawn arrow cursor. The source image's tip sits at its own
+     top-left corner, so positioning the wrapper's untransformed
+     top-left (no centering offset) at the pointer coordinates lines
+     the tip up with the actual mouse position. filter:invert(1)
+     turns the black artwork white first so mix-blend-mode: difference
+     still inverts whatever background it passes over.
+
+     Position (on .cursor) and the click pop/regrow animation (on the
+     inner .cursor__mark) are kept on separate elements/properties on
+     purpose: .cursor's transform is set directly every mousemove with
+     no transition, so tracking stays 1:1 with zero lag; .cursor__mark
+     is free to animate transform/opacity for the click effect without
+     ever touching that position transform. */
   const dot = document.createElement('div');
   dot.className = 'cursor';
-  dot.innerHTML = `
-    <svg viewBox="0 0 26 26" aria-hidden="true">
-      <path d="M13,13 L13,5 A8,8 0 0,1 21,13 Z" fill="#000"/>
-      <path d="M13,13 L21,13 A8,8 0 0,1 13,21 Z" fill="#fff"/>
-      <path d="M13,13 L13,21 A8,8 0 0,1 5,13 Z" fill="#000"/>
-      <path d="M13,13 L5,13 A8,8 0 0,1 13,5 Z" fill="#fff"/>
-      <circle cx="13" cy="13" r="8" fill="none" stroke="#fff" stroke-width="1.4"/>
-      <line x1="13" y1="1" x2="13" y2="25" stroke="#fff" stroke-width="1.2"/>
-      <line x1="1" y1="13" x2="25" y2="13" stroke="#fff" stroke-width="1.2"/>
-    </svg>`;
+
+  const mark = document.createElement('img');
+  mark.className = 'cursor__mark';
+  mark.src = 'images/cursor-arrow.png';
+  mark.alt = '';
+  dot.appendChild(mark);
+  dot.setAttribute('aria-hidden', 'true');
   document.body.appendChild(dot);
 
   document.addEventListener('mousemove', e => {
-    dot.style.transform = `translate(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%))`;
+    dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
   });
 
   document.addEventListener('mouseleave', () => {
@@ -222,6 +227,29 @@ function initCursor() {
 
   document.addEventListener('mouseout', e => {
     if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
+  });
+
+  /* Click pop/regrow: "bubble pop" out, then a fresh instance grows
+     back in from 0. Chained via animationend rather than timers so it
+     can never drift out of sync with the CSS durations. A new click
+     always strips both classes and forces a reflow before restarting,
+     so rapid clicking cleanly restarts the sequence instead of
+     stacking or glitching. */
+  mark.addEventListener('animationend', e => {
+    if (e.animationName === 'cursorPop') {
+      mark.classList.remove('pop');
+      void mark.offsetWidth;
+      mark.classList.add('grow');
+    } else if (e.animationName === 'cursorGrow') {
+      mark.classList.remove('grow');
+    }
+  });
+
+  document.addEventListener('click', () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    mark.classList.remove('pop', 'grow');
+    void mark.offsetWidth;
+    mark.classList.add('pop');
   });
 }
 
