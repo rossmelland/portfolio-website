@@ -174,18 +174,11 @@ function initHeroEmail() {
 function initCursor() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  /* Inject SVG filter — displacement map + blur creates the grainy,
-     feathered edge. Small area (26px) keeps it near-zero cost. */
+  /* Inject SVG filter used by the clients ticker's edge-fade grain. */
   const filterSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   filterSvg.setAttribute('style', 'position:absolute;width:0;height:0;pointer-events:none;overflow:hidden');
   filterSvg.setAttribute('aria-hidden', 'true');
   filterSvg.innerHTML = `<defs>
-    <filter id="cursor-grain" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="12" result="noise"/>
-      <feComposite in="SourceGraphic" in2="noise" operator="arithmetic" k1="0" k2="0.73" k3="0.27" k4="0" result="textured"/>
-      <feComposite in="textured" in2="SourceGraphic" operator="in" result="clipped"/>
-      <feGaussianBlur in="clipped" stdDeviation="2"/>
-    </filter>
     <filter id="ticker-grain" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="12" result="noise"/>
       <feComposite in="SourceGraphic" in2="noise" operator="arithmetic" k1="0" k2="0.94" k3="0.06" k4="0" result="textured"/>
@@ -194,8 +187,23 @@ function initCursor() {
   </defs>`;
   document.body.appendChild(filterSvg);
 
+  /* Print registration-mark cursor: circle + crosshair, quartered
+     black/white. mix-blend-mode: difference (set in CSS) makes the
+     black quadrants pass the backdrop through unchanged and the white
+     quadrants/lines invert it, so the mark stays visible on any
+     background while keeping the quartered silhouette. */
   const dot = document.createElement('div');
   dot.className = 'cursor';
+  dot.innerHTML = `
+    <svg viewBox="0 0 26 26" aria-hidden="true">
+      <path d="M13,13 L13,5 A8,8 0 0,1 21,13 Z" fill="#000"/>
+      <path d="M13,13 L21,13 A8,8 0 0,1 13,21 Z" fill="#fff"/>
+      <path d="M13,13 L13,21 A8,8 0 0,1 5,13 Z" fill="#000"/>
+      <path d="M13,13 L5,13 A8,8 0 0,1 13,5 Z" fill="#fff"/>
+      <circle cx="13" cy="13" r="8" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <line x1="13" y1="1" x2="13" y2="25" stroke="#fff" stroke-width="1.2"/>
+      <line x1="1" y1="13" x2="25" y2="13" stroke="#fff" stroke-width="1.2"/>
+    </svg>`;
   document.body.appendChild(dot);
 
   document.addEventListener('mousemove', e => {
@@ -271,6 +279,115 @@ function shuffleWorkCards() {
 }
 
 /* ============================================================
+   SCROLL PARALLAX — background texture + footer reveal
+   .bg-parallax is nudged so it moves at BG_FACTOR (~72%) of true
+   scroll speed, giving the paper texture a sense of sitting just
+   behind the content. .footer__reveal-inner gets a small settle-in
+   offset that eases out as the sticky footer is uncovered. Sizing
+   is derived from the page's real max scroll distance so the
+   texture layer always has enough overscan to avoid gaps, on
+   pages of any length. Skipped entirely under reduced motion —
+   the CSS fallback already renders both correctly at rest.
+   ============================================================ */
+
+function initScrollParallax() {
+  const wrapper = document.querySelector('.page-wrapper');
+  if (!wrapper) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const bg = wrapper.querySelector('.bg-parallax');
+  const footer = document.querySelector('.footer');
+  const footerInner = footer ? footer.querySelector('.footer__reveal-inner') : null;
+
+  const BG_FACTOR = 0.72;
+  const FOOTER_SETTLE_PX = 20;
+
+  let maxBgOffset = 0;
+  let footerRevealStart = 0;
+  let footerHeight = 0;
+
+  function measure() {
+    const viewportHeight = window.innerHeight;
+    const wrapperHeight = wrapper.offsetHeight;
+    const docMaxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
+    maxBgOffset = docMaxScroll * (1 - BG_FACTOR);
+
+    if (bg) {
+      bg.style.top = `${-maxBgOffset}px`;
+      bg.style.height = `${wrapperHeight + maxBgOffset}px`;
+    }
+
+    footerRevealStart = wrapperHeight - viewportHeight;
+    footerHeight = footer ? footer.offsetHeight : 0;
+  }
+
+  function update() {
+    const y = Math.max(window.scrollY, 0);
+
+    if (bg) {
+      const t = Math.min(y * (1 - BG_FACTOR), maxBgOffset);
+      bg.style.transform = `translate3d(0, ${t}px, 0)`;
+    }
+
+    if (footerInner && footerHeight > 0) {
+      const revealed = Math.min(Math.max(y - footerRevealStart, 0), footerHeight);
+      const progress = revealed / footerHeight;
+      footerInner.style.transform = `translate3d(0, ${(1 - progress) * FOOTER_SETTLE_PX}px, 0)`;
+    }
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => { update(); ticking = false; });
+      ticking = true;
+    }
+  }
+
+  measure();
+  update();
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => { measure(); update(); });
+  window.addEventListener('load', () => { measure(); update(); });
+
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(() => { measure(); update(); }).observe(wrapper);
+  }
+}
+
+/* ============================================================
+   CONTACT LINK — manual scroll-to-bottom
+   The footer is position:sticky, so its on-screen rect stays near
+   the viewport bottom at almost any scroll position. That confuses
+   the browser's native #contact anchor jump (and hash-on-load) into
+   thinking a tiny scroll already satisfies it. Handle it manually:
+   always scroll to the true bottom of the page instead.
+   ============================================================ */
+
+function scrollToPageBottom(smooth) {
+  const target = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  window.scrollTo({ top: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function initContactScroll() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll('a[href="#contact"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      scrollToPageBottom(!reduceMotion);
+      history.pushState(null, '', '#contact');
+    });
+  });
+
+  if (window.location.hash === '#contact') {
+    scrollToPageBottom(false);
+    window.addEventListener('load', () => scrollToPageBottom(false));
+  }
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 
@@ -282,6 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroEmail();
   applyFadeClasses();
   applyStaggerDelays();
+  initScrollParallax();
+  initContactScroll();
 
   if ('IntersectionObserver' in window) {
     observeFadeElements();

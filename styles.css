@@ -76,15 +76,18 @@
   left: 0;
   width: 26px;
   height: 26px;
-  background: #fff;
-  border-radius: 50%;
   pointer-events: none;
   z-index: 99999;
   mix-blend-mode: difference;
   will-change: transform;
   transform: translate(-200px, -200px);
   transition: width 0.22s ease, height 0.22s ease;
-  filter: url(#cursor-grain);
+}
+
+.cursor svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .cursor--expanded {
@@ -99,6 +102,9 @@
   --color-text-muted: #0D0D0D;
   --color-border:     rgba(13, 13, 13, 0.12);
   --color-accent:     #0D0D0D;
+
+  /* Paper texture — placeholder, swap --texture-image to change the grain */
+  --texture-image:    url('images/textures/paper-bg.jpg');
 
   --font-display: 'PPMori', sans-serif;
   --font-body:    'PPMori', sans-serif;
@@ -131,6 +137,50 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
+}
+
+/* ============================================================
+   SCROLL PARALLAX — background texture + footer reveal
+   .page-wrapper holds everything except the footer, painted above
+   it (z-index) so the sticky footer stays hidden underneath until
+   scrolled past. .bg-parallax carries the paper texture and is
+   nudged by JS (see initScrollParallax in script.js) so it moves
+   slightly slower than the content scrolling over it. Both layers
+   fall back to a static, gap-free state below if JS never runs.
+   ============================================================ */
+
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+.bg-parallax {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background-image: var(--texture-image);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: multiply;
+  background-color: var(--color-bg);
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.footer__reveal-inner {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer { position: static !important; }
+  .bg-parallax { transform: none !important; }
+  .footer__reveal-inner { transform: none !important; }
 }
 
 img { display: block; max-width: 100%; }
@@ -250,6 +300,7 @@ ul { list-style: none; }
   height: 60px;
   width: auto;
   display: block;
+  mix-blend-mode: multiply;
 }
 
 .nav__links {
@@ -356,6 +407,7 @@ ul { list-style: none; }
   width: clamp(404px, 81vw, 1242px);
   height: auto;
   display: block;
+  mix-blend-mode: multiply;
 }
 
 .hero__bottom {
@@ -774,12 +826,7 @@ ul { list-style: none; }
    PROJECT CASE STUDY — editorial layout
    ============================================================ */
 
-body.project-page {
-  background: var(--color-bg);
-}
-
 .project-main {
-  background: var(--color-bg);
   padding-top: 7rem;
   padding-bottom: var(--space-2xl);
 }
@@ -891,7 +938,6 @@ body.project-page {
 }
 
 .project-back {
-  background: var(--color-bg);
   padding: var(--space-xl) 0;
   border-top: 1px solid var(--color-border);
 }
@@ -948,7 +994,6 @@ body.project-page {
    ============================================================ */
 
 .clients {
-  background: var(--color-bg);
   padding: 1.575rem 0;
   border-top: 1px solid var(--color-border);
   overflow: hidden;
@@ -1027,6 +1072,9 @@ body.project-page {
    ============================================================ */
 
 .footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 0;
   background: #0D0D0D;
   color: #FAF7F0;
   padding: var(--space-2xl) 0 var(--space-lg);
@@ -1194,7 +1242,12 @@ body.project-page {
     display: none;
     position: fixed;
     inset: 0;
-    background: var(--color-bg);
+    background-color: var(--color-bg);
+    background-image: var(--texture-image);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: multiply;
     flex-direction: column;
     justify-content: center;
     align-items: center;
