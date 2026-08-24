@@ -174,19 +174,6 @@ function initHeroEmail() {
 function initCursor() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  /* Inject SVG filter used by the clients ticker's edge-fade grain. */
-  const filterSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  filterSvg.setAttribute('style', 'position:absolute;width:0;height:0;pointer-events:none;overflow:hidden');
-  filterSvg.setAttribute('aria-hidden', 'true');
-  filterSvg.innerHTML = `<defs>
-    <filter id="ticker-grain" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="12" result="noise"/>
-      <feComposite in="SourceGraphic" in2="noise" operator="arithmetic" k1="0" k2="0.94" k3="0.06" k4="0" result="textured"/>
-      <feComposite in="textured" in2="SourceGraphic" operator="in"/>
-    </filter>
-  </defs>`;
-  document.body.appendChild(filterSvg);
-
   /* Hand-drawn arrow cursor. The source image's tip sits at its own
      top-left corner, so positioning the wrapper's untransformed
      top-left (no centering offset) at the pointer coordinates lines
