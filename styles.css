@@ -139,7 +139,6 @@
 
   /* Paper texture — placeholder, swap --texture-image to change the grain */
   --texture-image:        url('images/textures/paper-bg.jpg');
-  --footer-texture-image: url('images/textures/footer-paper-black.jpg');
 
   --font-display: 'PPMori', sans-serif;
   --font-body:    'PPMori', sans-serif;
@@ -175,13 +174,11 @@ body {
 }
 
 /* ============================================================
-   SCROLL PARALLAX — background texture + footer reveal
+   SCROLL PARALLAX — footer reveal
    .page-wrapper holds everything except the footer, painted above
    it (z-index) so the sticky footer stays hidden underneath until
-   scrolled past. .bg-parallax carries the paper texture and is
-   nudged by JS (see initScrollParallax in script.js) so it moves
-   slightly slower than the content scrolling over it. Both layers
-   fall back to a static, gap-free state below if JS never runs.
+   scrolled past. (See BACKGROUND TILES below for the per-section
+   paper texture zones.)
    ============================================================ */
 
 .page-wrapper {
@@ -191,31 +188,57 @@ body {
   overflow: hidden;
 }
 
-.bg-parallax {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 100%;
-  background-image: var(--texture-image);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: multiply;
-  background-color: var(--color-bg);
-  z-index: -1;
-  pointer-events: none;
-  will-change: transform;
-}
-
 .footer__reveal-inner {
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .footer { position: static !important; }
-  .bg-parallax { transform: none !important; }
   .footer__reveal-inner { transform: none !important; }
+  .bg-tile { transform: none !important; }
+}
+
+/* ============================================================
+   BACKGROUND TILES — shared zone system
+   Every zone (homepage hero / work / the combined Awards+Ticker+
+   About zone, each case study page's single .bg-zone-combined, and
+   the footer on every page) hosts its own absolutely-positioned
+   canvas of native-size paper tiles (populated by initBgTiles in
+   script.js) instead of a stretched texture image. Tiles scatter
+   with overlap and drift at their own subtle parallax speed off one
+   shared scroll/rAF loop — except the footer's, which are placed
+   once and never move, since the footer is revealed by the sticky
+   curtain-lift rather than by scrolling past it. The host element
+   (.hero / .work / .bg-zone-combined / .footer) provides the
+   positioning context and clips tiles to its own bounds.
+   ============================================================ */
+
+.bg-tiles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bg-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.bg-tile-img {
+  display: block;
+  max-width: none;
+  pointer-events: none;
+}
+
+.bg-zone-combined {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
 }
 
 img { display: block; max-width: 100%; }
@@ -422,6 +445,9 @@ ul { list-style: none; }
    ============================================================ */
 
 .hero {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
@@ -589,9 +615,21 @@ ul { list-style: none; }
   width: auto;
 }
 
+/* Work's stamped heading is black ink on transparent — invert it to
+   read white against the section's new black tiled background. */
+.work .section__title img {
+  filter: invert(1);
+}
+
 /* ============================================================
    WORK / PORTFOLIO
    ============================================================ */
+
+.work {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
 
 .work__grid {
   display: grid;
@@ -773,7 +811,10 @@ ul { list-style: none; }
 }
 
 .about__image-placeholder {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
@@ -797,6 +838,17 @@ ul { list-style: none; }
 .about__image-placeholder span {
   position: relative;
   z-index: 1;
+}
+
+.about__image-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .about__content {
@@ -826,34 +878,6 @@ ul { list-style: none; }
   margin-bottom: 1.25rem;
 }
 
-.about__credentials {
-  display: flex;
-  gap: var(--space-lg);
-  margin-top: var(--space-lg);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--color-border);
-}
-
-.credential {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.credential__value {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.credential__label {
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
 /* ============================================================
    WORK CARD — real image
    ============================================================ */
@@ -868,6 +892,17 @@ ul { list-style: none; }
 
 .work__card-link:hover .work__card-img {
   transform: scale(1.06);
+}
+
+.work__card-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 3;
 }
 
 /* ============================================================
@@ -1044,6 +1079,7 @@ ul { list-style: none; }
 .clients {
   padding: 1.575rem 0;
   overflow: hidden;
+  background: transparent;
 }
 
 .clients__track-wrap {
@@ -1099,17 +1135,26 @@ ul { list-style: none; }
   position: sticky;
   bottom: 0;
   z-index: 0;
+  /* Solid fallback in case the tiled background never loads/runs —
+     the tiles themselves (.bg-tiles--footer, see BACKGROUND TILES)
+     sit behind .footer__scrim, which sits behind the content, so
+     legibility never depends on which part of a tile lands under a
+     given line. Tiles are placed once and never move — see
+     initBgTiles's "static" zones in script.js. */
   background-color: #0D0D0D;
-  /* Dark scrim (35% black) sits between the texture and the text so
-     legibility never depends on which part of the image lands under
-     a given line — bright scratches/flecks in the source photo get
-     muted while the grain itself stays visible. */
-  background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), var(--footer-texture-image);
-  background-repeat: no-repeat, no-repeat;
-  background-size: cover, cover;
-  background-position: center, center;
   color: #FAF7F0;
   padding: var(--space-2xl) 0 var(--space-lg);
+}
+
+/* 35% black scrim between the tiled background and the content —
+   sits at the same z-index as .bg-tiles--footer but after it in the
+   DOM, so it paints on top of the tiles and beneath everything else. */
+.footer__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .footer__upper {
@@ -1308,10 +1353,6 @@ ul { list-style: none; }
   .work__grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
-  }
-
-  .about__credentials {
-    gap: var(--space-md);
   }
 
 }

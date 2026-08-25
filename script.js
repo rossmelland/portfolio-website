@@ -279,6 +279,8 @@ function initContactForm() {
    WORK GRID — shuffle card order on every page load
    ============================================================ */
 
+const CARD_BORDER_COUNT = 3;
+
 function shuffleWorkCards() {
   const grid = document.querySelector('.work__grid');
   if (!grid) return;
@@ -287,22 +289,43 @@ function shuffleWorkCards() {
     const j = Math.floor(Math.random() * (i + 1));
     [cards[i], cards[j]] = [cards[j], cards[i]];
   }
+  let prevBorderNum = null;
   cards.forEach((card, i) => {
     grid.appendChild(card);
     card.dataset.index = String(i + 1).padStart(2, '0');
+
+    const border = card.querySelector('.work__card-border');
+    if (border) {
+      const choices = [];
+      for (let n = 1; n <= CARD_BORDER_COUNT; n++) {
+        if (n !== prevBorderNum) choices.push(n);
+      }
+      const num = choices[Math.floor(Math.random() * choices.length)];
+      border.src = `images/textures/card-border-${String(num).padStart(2, '0')}.png`;
+      prevBorderNum = num;
+    }
   });
 }
 
 /* ============================================================
-   SCROLL PARALLAX — background texture + footer reveal
-   .bg-parallax is nudged so it moves at BG_FACTOR (~72%) of true
-   scroll speed, giving the paper texture a sense of sitting just
-   behind the content. .footer__reveal-inner gets a small settle-in
-   offset that eases out as the sticky footer is uncovered. Sizing
-   is derived from the page's real max scroll distance so the
-   texture layer always has enough overscan to avoid gaps, on
-   pages of any length. Skipped entirely under reduced motion —
-   the CSS fallback already renders both correctly at rest.
+   ABOUT — random worn border on page load
+   ============================================================ */
+
+function randomizeAboutBorder() {
+  const border = document.querySelector('.about__image-border');
+  if (!border) return;
+  const n = String(Math.floor(Math.random() * CARD_BORDER_COUNT) + 1).padStart(2, '0');
+  border.src = `images/textures/card-border-${n}.png`;
+}
+
+/* ============================================================
+   SCROLL PARALLAX — footer reveal
+   .footer__reveal-inner gets a small settle-in offset that eases
+   out as the sticky footer is uncovered, sized off the page's
+   real max scroll distance. Skipped entirely under reduced
+   motion — the CSS fallback already renders it correctly at
+   rest. (See BACKGROUND TILES below for the per-section paper
+   texture zones that replaced the old single .bg-parallax layer.)
    ============================================================ */
 
 function initScrollParallax() {
@@ -310,39 +333,23 @@ function initScrollParallax() {
   if (!wrapper) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  const bg = wrapper.querySelector('.bg-parallax');
   const footer = document.querySelector('.footer');
   const footerInner = footer ? footer.querySelector('.footer__reveal-inner') : null;
 
-  const BG_FACTOR = 0.72;
   const FOOTER_SETTLE_PX = 20;
 
-  let maxBgOffset = 0;
   let footerRevealStart = 0;
   let footerHeight = 0;
 
   function measure() {
     const viewportHeight = window.innerHeight;
     const wrapperHeight = wrapper.offsetHeight;
-    const docMaxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
-    maxBgOffset = docMaxScroll * (1 - BG_FACTOR);
-
-    if (bg) {
-      bg.style.top = `${-maxBgOffset}px`;
-      bg.style.height = `${wrapperHeight + maxBgOffset}px`;
-    }
-
     footerRevealStart = wrapperHeight - viewportHeight;
     footerHeight = footer ? footer.offsetHeight : 0;
   }
 
   function update() {
     const y = Math.max(window.scrollY, 0);
-
-    if (bg) {
-      const t = Math.min(y * (1 - BG_FACTOR), maxBgOffset);
-      bg.style.transform = `translate3d(0, ${t}px, 0)`;
-    }
 
     if (footerInner && footerHeight > 0) {
       const revealed = Math.min(Math.max(y - footerRevealStart, 0), footerHeight);
@@ -369,6 +376,320 @@ function initScrollParallax() {
   if ('ResizeObserver' in window) {
     new ResizeObserver(() => { measure(); update(); }).observe(wrapper);
   }
+}
+
+/* ============================================================
+   BACKGROUND TILES — shared zone system
+   Loaded on every page (script.js is one shared file). Each zone is
+   an absolutely-positioned canvas (.bg-tiles, inside a host element)
+   of native-size paper tiles scattered with jitter:
+     - .hero / .work — the homepage's two standalone zones.
+     - .bg-zone-combined — the homepage's Awards+Ticker+About zone,
+       OR (on a case study page, where it's the only one present)
+       that page's single zone spanning project-main + project-back.
+     - .footer — present on every page; its tiles are placed once
+       and never drift (see the "static" zone handling below), since
+       the footer is revealed by the sticky curtain-lift, not by
+       scrolling past it in the normal sense.
+   Columns are spaced unevenly on purpose: tighter/denser (more
+   overlap) in the left/right margins where no content sits, wider/
+   sparser (less overlap) through the central content column behind
+   the hero text, project cards, awards rows and about/project copy —
+   full coverage either way, just less visual noise behind the
+   content. Rows use a single moderate overlap top to bottom. Tile
+   images are picked at random per cell, but never repeated against
+   the already-placed left or top neighbor — the same exclude-then-
+   random-pick rule used for the project card borders, extended to
+   two dimensions. Every non-static zone's tiles drift at their own
+   parallax speed (randomized around ~72.5% scroll speed, spread
+   widened for a layered depth effect) off ONE shared scroll listener
+   / rAF loop, never a listener per tile. Reduced motion still builds
+   and places tiles everywhere, it just never starts the drift loop.
+   ============================================================ */
+
+const BG_TILE_SETS = {
+  white: { count: 6, avgW: 1042, avgH: 820, minW: 850, minH: 559 },
+  black: { count: 6, avgW: 1210, avgH: 880, minW: 900, minH: 624 },
+};
+
+// Native pixel dimensions per tile image, used only to scale-compensate
+// 90/270 rotations (see bgOrientationTransform) — never fed into the
+// grid/step math above, so density/overlap stay exactly as tuned.
+const BG_TILE_DIMS = {
+  white: [
+    { w: 1000, h: 1210 },
+    { w: 1100, h: 774 },
+    { w: 900, h: 661 },
+    { w: 1000, h: 668 },
+    { w: 1400, h: 1047 },
+    { w: 850, h: 559 },
+  ],
+  black: [
+    { w: 1500, h: 1072 },
+    { w: 1600, h: 1089 },
+    { w: 900, h: 749 },
+    { w: 960, h: 752 },
+    { w: 1400, h: 996 },
+    { w: 900, h: 624 },
+  ],
+};
+
+// The 8 distinct orientations (dihedral group of a rectangle: 4 rotations
+// x optional horizontal flip) a tile can be placed in.
+const BG_TILE_ORIENTATIONS = [
+  { rotate: 0, flip: false },
+  { rotate: 90, flip: false },
+  { rotate: 180, flip: false },
+  { rotate: 270, flip: false },
+  { rotate: 0, flip: true },
+  { rotate: 90, flip: true },
+  { rotate: 180, flip: true },
+  { rotate: 270, flip: true },
+];
+
+const BG_TILE_EXTRA_TILT = 6; // deg, layered on a reused orientation once all 8 are used
+
+// .bg-zone-combined / .bg-tiles--combined double as the single continuous
+// zone on every case study page (Awards+Ticker+About only exists on the
+// homepage; a case study page has at most one .bg-zone-combined, so the
+// same selector pair resolves correctly on either page with no extra
+// per-page config). The footer entry is marked static: true — its tiles
+// are placed like any other zone's but initBgTiles never applies scroll
+// drift to them (see update()).
+const BG_TILE_ZONES = [
+  { host: '.hero',             canvas: '.bg-tiles--hero',     set: 'white' },
+  { host: '.work',             canvas: '.bg-tiles--work',     set: 'black' },
+  { host: '.bg-zone-combined', canvas: '.bg-tiles--combined', set: 'white' },
+  { host: '.footer',           canvas: '.bg-tiles--footer',   set: 'black', static: true },
+];
+
+const BG_TILE_OVERLAP_EDGE = 0.38;   // left/right margins + all rows — fuller
+const BG_TILE_OVERLAP_CENTER = 0.30; // central content column — sparser
+const BG_TILE_CENTER_BAND = 0.6;     // middle 60% of zone width counts as "central"
+const BG_TILE_JITTER = 0.12;
+const BG_TILE_MAX_PER_ZONE = 90;
+const BG_TILE_MIN_FACTOR = 0.675;
+const BG_TILE_MAX_FACTOR = 0.775;
+const BG_TILE_MAX_DRIFT = 46;
+
+function bgTilePath(setName, oneBasedIndex) {
+  return `images/textures/paper-${setName}-${String(oneBasedIndex).padStart(2, '0')}.png`;
+}
+
+function pickBgTileIndex(count, excludeA, excludeB) {
+  const choices = [];
+  for (let i = 0; i < count; i++) {
+    if (i !== excludeA && i !== excludeB) choices.push(i);
+  }
+  if (choices.length === 0) {
+    for (let i = 0; i < count; i++) if (i !== excludeA) choices.push(i);
+  }
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+// Per-zone, per-image record of which of the 8 orientations have already
+// been used, so a repeated image never reads as an obvious duplicate. The
+// first placement of an image stays upright (orientation 0); each repeat
+// picks a not-yet-used orientation; once all 8 are used, a random one is
+// reused with a small extra tilt layered on so it's still not identical.
+function pickBgOrientation(usedByIndex, idx) {
+  const used = usedByIndex.get(idx);
+  if (!used) {
+    usedByIndex.set(idx, [0]);
+    return { orientation: BG_TILE_ORIENTATIONS[0], extraTilt: 0 };
+  }
+
+  const available = [];
+  for (let i = 0; i < BG_TILE_ORIENTATIONS.length; i++) {
+    if (!used.includes(i)) available.push(i);
+  }
+
+  let orientIdx;
+  let extraTilt = 0;
+  if (available.length > 0) {
+    orientIdx = available[Math.floor(Math.random() * available.length)];
+  } else {
+    orientIdx = used[Math.floor(Math.random() * used.length)];
+    extraTilt = (Math.random() * 2 - 1) * BG_TILE_EXTRA_TILT;
+  }
+
+  used.push(orientIdx);
+  return { orientation: BG_TILE_ORIENTATIONS[orientIdx], extraTilt };
+}
+
+// Builds the static CSS transform for one tile image. A 90/270 rotation
+// swaps the image's visual footprint (width<->height) relative to its own
+// native-size layout box, so it's scaled up just enough to still fully
+// cover that box on both axes — the box (and therefore the grid's
+// coverage guarantees) never changes, only what bleeds past its edges.
+function bgOrientationTransform(orientation, extraTilt, w, h) {
+  const parts = [];
+  if (orientation.flip) parts.push('scaleX(-1)');
+  if (orientation.rotate) parts.push(`rotate(${orientation.rotate}deg)`);
+  if (extraTilt) parts.push(`rotate(${extraTilt.toFixed(2)}deg)`);
+  if (orientation.rotate === 90 || orientation.rotate === 270) {
+    const ratio = Math.max(w, h) / Math.min(w, h);
+    parts.push(`scale(${ratio.toFixed(4)})`);
+  }
+  return parts.join(' ');
+}
+
+// Caps a raw step so that, even accounting for jitter pulling this
+// column and its neighbor apart from each other, two of the smallest
+// tiles in the set can never separate enough to expose a gap.
+function bgSafeStep(rawStep, minDim) {
+  const cap = minDim / (1 + 2 * BG_TILE_JITTER);
+  return Math.min(rawStep, cap);
+}
+
+function buildBgColumns(width, avgW, minW) {
+  const stepEdge = bgSafeStep(avgW * (1 - BG_TILE_OVERLAP_EDGE), minW);
+  const stepCenter = bgSafeStep(avgW * (1 - BG_TILE_OVERLAP_CENTER), minW);
+  const centerStart = width * (1 - BG_TILE_CENTER_BAND) / 2;
+  const centerEnd = width - centerStart;
+
+  const columns = [];
+  let x = -stepEdge;
+  let guard = 0;
+  while (x < width + stepEdge && guard < 30) {
+    const inCenter = x >= centerStart && x <= centerEnd;
+    const step = inCenter ? stepCenter : stepEdge;
+    columns.push({ x, step });
+    x += step;
+    guard++;
+  }
+  return columns;
+}
+
+function buildBgZoneTiles(canvasEl, setName, width, height) {
+  canvasEl.innerHTML = '';
+  if (width <= 0 || height <= 0) return [];
+
+  const { count, avgW, avgH, minW, minH } = BG_TILE_SETS[setName];
+  const columns = buildBgColumns(width, avgW, minW).slice(0, 12);
+  const stepH = bgSafeStep(avgH * (1 - BG_TILE_OVERLAP_EDGE), minH);
+
+  const cols = Math.max(1, columns.length);
+  const maxRows = Math.max(1, Math.floor(BG_TILE_MAX_PER_ZONE / cols));
+  const rows = Math.max(1, Math.min(Math.ceil(height / stepH) + 3, maxRows));
+
+  const grid = [];
+  const tiles = [];
+  const usedOrientations = new Map();
+
+  for (let r = 0; r < rows; r++) {
+    grid[r] = [];
+    for (let c = 0; c < cols; c++) {
+      const leftIdx = c > 0 ? grid[r][c - 1] : -1;
+      const topIdx = r > 0 ? grid[r - 1][c] : -1;
+      const idx = pickBgTileIndex(count, leftIdx, topIdx);
+      grid[r][c] = idx;
+
+      const { x: colBaseX, step: colStep } = columns[c];
+      const jitterX = (Math.random() * 2 - 1) * colStep * BG_TILE_JITTER;
+      const jitterY = (Math.random() * 2 - 1) * stepH * BG_TILE_JITTER;
+
+      const { orientation, extraTilt } = pickBgOrientation(usedOrientations, idx);
+      const dims = BG_TILE_DIMS[setName][idx];
+
+      const wrap = document.createElement('div');
+      wrap.className = 'bg-tile';
+      wrap.style.left = `${colBaseX + jitterX}px`;
+      wrap.style.top = `${(r - 1) * stepH + jitterY}px`;
+
+      const img = document.createElement('img');
+      img.src = bgTilePath(setName, idx + 1);
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.className = 'bg-tile-img';
+      const orientTransform = bgOrientationTransform(orientation, extraTilt, dims.w, dims.h);
+      if (orientTransform) img.style.transform = orientTransform;
+
+      wrap.appendChild(img);
+      canvasEl.appendChild(wrap);
+
+      tiles.push({
+        el: wrap,
+        factor: BG_TILE_MIN_FACTOR + Math.random() * (BG_TILE_MAX_FACTOR - BG_TILE_MIN_FACTOR),
+      });
+    }
+  }
+
+  return tiles;
+}
+
+function initBgTiles() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let zones = [];
+
+  function build() {
+    zones = BG_TILE_ZONES.map(cfg => {
+      const hostEl = document.querySelector(cfg.host);
+      const canvasEl = document.querySelector(cfg.canvas);
+      if (!hostEl || !canvasEl) return null;
+      const tiles = buildBgZoneTiles(canvasEl, cfg.set, hostEl.offsetWidth, hostEl.offsetHeight);
+      return { hostEl, tiles, topY: 0, static: !!cfg.static };
+    }).filter(Boolean);
+    measure();
+  }
+
+  function measure() {
+    zones.forEach(zone => {
+      const rect = zone.hostEl.getBoundingClientRect();
+      zone.topY = rect.top + window.scrollY;
+    });
+  }
+
+  // Static zones (the footer) are placed once by build() above and never
+  // touched again here — no transform is ever applied, so they can't drift
+  // independently of the sticky/curtain-lift reveal they sit behind.
+  function update() {
+    const y = Math.max(window.scrollY, 0);
+    zones.forEach(zone => {
+      if (zone.static) return;
+      const delta = Math.max(0, y - zone.topY);
+      zone.tiles.forEach(tile => {
+        const drift = Math.min(delta * (1 - tile.factor), BG_TILE_MAX_DRIFT);
+        tile.el.style.transform = `translate3d(0, ${drift}px, 0)`;
+      });
+    });
+  }
+
+  build();
+
+  let resizeTimer = null;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      build();
+      if (!reduceMotion) update();
+    }, 150);
+  }
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('load', onResize);
+
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(onResize);
+    BG_TILE_ZONES.forEach(cfg => {
+      const el = document.querySelector(cfg.host);
+      if (el) ro.observe(el);
+    });
+  }
+
+  if (reduceMotion) return;
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => { update(); ticking = false; });
+      ticking = true;
+    }
+  }
+
+  update();
+  window.addEventListener('scroll', onScroll, { passive: true });
 }
 
 /* ============================================================
@@ -409,12 +730,14 @@ function initContactScroll() {
 document.addEventListener('DOMContentLoaded', () => {
   initCursor();
   shuffleWorkCards();
+  randomizeAboutBorder();
   animateNav();
   animateHero();
   initHeroEmail();
   applyFadeClasses();
   applyStaggerDelays();
   initScrollParallax();
+  initBgTiles();
   initContactScroll();
 
   if ('IntersectionObserver' in window) {
