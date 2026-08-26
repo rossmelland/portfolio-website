@@ -98,8 +98,8 @@
 }
 
 .cursor--expanded {
-  width: 42px;
-  height: 56px;
+  width: 36px;
+  height: 48px;
 }
 
 .cursor__mark {
@@ -143,6 +143,17 @@
   --font-display: 'PPMori', sans-serif;
   --font-body:    'PPMori', sans-serif;
 
+  /* Type system — sizing/weight/case roles built on these five sizes.
+     See styles.css type-role comments (SMALL / SMALL — CAPS / BODY /
+     BODY BOLD / SUBHEAD / DISPLAY / HERO) for what each role sets.
+     BODY BOLD is BODY's size (var(--text-body)) at weight 600 — for
+     clickable/interactive or emphasized body-level text. */
+  --text-small:   0.75rem;
+  --text-body:    1rem;
+  --text-subhead: 1.625rem;
+  --text-display: 2.5rem;
+  --text-hero:    clamp(3rem, 7vw, 6.5rem);
+
   --reveal-duration: 0.85s;
   --reveal-ease:     cubic-bezier(0.22, 1, 0.36, 1);
   --reveal-distance: 20px;
@@ -167,7 +178,9 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-weight: 200;
+  font-size: var(--text-body);
+  font-weight: 400;
+  text-transform: none;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
@@ -269,9 +282,9 @@ ul { list-style: none; }
 .label {
   display: inline-block;
   font-family: var(--font-body);
-  font-size: 0.6875rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-size: var(--text-small);
+  font-weight: 200;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
@@ -281,9 +294,9 @@ ul { list-style: none; }
   align-items: center;
   gap: 0.5rem;
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-size: var(--text-small);
+  font-weight: 200;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.875rem 2rem;
   border-radius: var(--radius);
@@ -495,13 +508,14 @@ ul { list-style: none; }
   border: none;
   padding: 0;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--color-text);
   cursor: pointer;
   transition: opacity var(--transition);
   text-align: left;
-  letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
   gap: 0.45em;
@@ -522,10 +536,10 @@ ul { list-style: none; }
 }
 
 .hero__copied {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: var(--text-small);
+  font-weight: 200;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--color-accent);
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -544,11 +558,12 @@ ul { list-style: none; }
 }
 
 .hero__social-link {
-  font-size: 0.875rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--color-text-muted);
   transition: color var(--transition);
-  letter-spacing: 0.01em;
 }
 
 .hero__social-link:hover {
@@ -556,8 +571,9 @@ ul { list-style: none; }
 }
 
 .hero__bio {
-  font-size: 2.5rem;
+  font-size: var(--text-display);
   font-weight: 600;
+  text-transform: none;
   line-height: 1.25;
   letter-spacing: -0.02em;
   color: var(--color-text);
@@ -577,7 +593,7 @@ ul { list-style: none; }
   .hero__bio {
     flex: none;
     max-width: 100%;
-    font-size: 1.625rem;
+    font-size: var(--text-subhead);
   }
 
   .hero__logo {
@@ -675,18 +691,20 @@ ul { list-style: none; }
 
 .work__card-overlay-title {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: var(--text-display);
   font-weight: 600;
+  text-transform: none;
   line-height: 1.05;
   letter-spacing: -0.02em;
   color: #FAF7F0;
 }
 
 .work__card-overlay-cat {
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: 200;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: rgba(250, 247, 240, 0.7);
-  letter-spacing: 0.04em;
 }
 
 /* ============================================================
@@ -733,29 +751,35 @@ ul { list-style: none; }
 }
 
 .award__name {
-  font-size: 0.9375rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--color-text);
   line-height: 1.35;
 }
 
 .award__org {
-  font-size: 0.75rem;
+  font-size: var(--text-body);
   font-weight: 400;
+  text-transform: none;
   color: var(--color-text-muted);
   line-height: 1.5;
 }
 
 .award__desc {
-  font-size: 0.75rem;
-  font-weight: 200;
+  font-size: var(--text-body);
+  font-weight: 400;
+  text-transform: none;
   color: var(--color-text-muted);
   line-height: 1.65;
 }
 
 .award__year {
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   color: var(--color-text-muted);
   text-align: right;
 }
@@ -872,7 +896,9 @@ ul { list-style: none; }
 }
 
 .about__bio {
-  font-size: 1rem;
+  font-size: var(--text-body);
+  font-weight: 400;
+  text-transform: none;
   line-height: 1.85;
   color: #0D0D0D;
   margin-bottom: 1.25rem;
@@ -933,8 +959,9 @@ ul { list-style: none; }
 
 .project-title {
   font-family: var(--font-display);
-  font-size: clamp(3rem, 7vw, 6.5rem);
+  font-size: var(--text-hero);
   font-weight: 600;
+  text-transform: none;
   line-height: 0.95;
   letter-spacing: -0.02em;
   color: var(--color-text);
@@ -961,23 +988,26 @@ ul { list-style: none; }
 }
 
 .project-meta__label {
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-size: var(--text-small);
+  font-weight: 200;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
 
 .project-meta__value {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 400;
+  text-transform: none;
   color: var(--color-text);
   line-height: 1.45;
 }
 
 .project-body__copy p {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
+  font-weight: 400;
+  text-transform: none;
   line-height: 1.9;
   color: #0D0D0D;
   margin-bottom: 1.5rem;
@@ -988,9 +1018,9 @@ ul { list-style: none; }
 }
 
 .project-credit {
-  font-size: 0.8rem;
-  font-weight: 400;
-  letter-spacing: 0.06em;
+  font-size: var(--text-small);
+  font-weight: 200;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #0D0D0D;
   margin-top: var(--space-md);
@@ -1000,8 +1030,8 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: 200;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1100,6 +1130,8 @@ ul { list-style: none; }
 .clients__set {
   display: flex;
   align-items: center;
+  gap: 5.5rem;
+  padding-right: 5.5rem;
 }
 
 .client__item {
@@ -1108,18 +1140,18 @@ ul { list-style: none; }
   white-space: nowrap;
 }
 
-.client__item::after {
-  content: '·';
-  margin: 0 2.75rem;
-  color: var(--color-text-muted);
-  font-size: 1rem;
-  line-height: 1;
-}
-
 .client__logo {
   height: 36px;
   width: auto;
   object-fit: contain;
+}
+
+.client__logo--lg {
+  height: 47.88px;
+}
+
+.client__logo--xl {
+  height: 59.85px;
 }
 
 @keyframes clientsTicker {
@@ -1164,8 +1196,9 @@ ul { list-style: none; }
 
 .footer__heading {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: var(--text-display);
   font-weight: 600;
+  text-transform: none;
   line-height: 1.1;
   letter-spacing: -0.03em;
   color: #FAF7F0;
@@ -1184,8 +1217,10 @@ ul { list-style: none; }
   background: #FAF7F0;
   color: #0D0D0D;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   padding: 0.75rem 2rem;
   border-radius: 5px;
   transition: opacity var(--transition);
@@ -1217,10 +1252,11 @@ ul { list-style: none; }
 }
 
 .footer__avail-text {
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: 200;
+  text-transform: none;
+  letter-spacing: normal;
   color: #FAF7F0;
-  letter-spacing: 0.02em;
 }
 
 .footer__lower {
@@ -1237,8 +1273,10 @@ ul { list-style: none; }
 }
 
 .footer__contact-item {
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
   color: #FAF7F0;
   transition: opacity var(--transition);
 }
@@ -1252,10 +1290,11 @@ ul { list-style: none; }
   flex-direction: column;
   align-items: flex-end;
   gap: 0.15rem;
-  font-size: 0.6875rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: 200;
+  text-transform: none;
+  letter-spacing: normal;
   color: #FAF7F0;
-  letter-spacing: 0.02em;
   text-align: right;
 }
 
@@ -1269,6 +1308,48 @@ ul { list-style: none; }
   .footer__legal {
     align-items: flex-start;
     text-align: left;
+  }
+}
+
+/* ============================================================
+   FOOTER — case study page variant (name / copyright / location)
+   Project pages use a simpler single-row footer markup than the
+   homepage's, but should read as the same footer: name is Body
+   Bold role (same as .footer__contact-item), copy/location are
+   Small role (same as .footer__legal).
+   ============================================================ */
+
+.footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.footer__name {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #FAF7F0;
+}
+
+.footer__copy,
+.footer__location {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: 200;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #FAF7F0;
+}
+
+@media (max-width: 640px) {
+  .footer__inner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
