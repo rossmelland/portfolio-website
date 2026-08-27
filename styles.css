@@ -740,6 +740,13 @@ ul { list-style: none; }
    AWARDS & RECOGNITION
    ============================================================ */
 
+/* Offsets the #awards hash-link arrival (from case study Awards
+   links) so the section isn't tucked under the fixed nav: nav height
+   (108px) + a small buffer. */
+#awards {
+  scroll-margin-top: 132px;
+}
+
 .awards__list {
   border-top: 1px solid var(--color-border);
 }
@@ -983,6 +990,9 @@ ul { list-style: none; }
 .project-image {
   width: 100%;
   height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
   display: block;
 }
 
@@ -1031,6 +1041,35 @@ ul { list-style: none; }
   text-transform: none;
   color: var(--color-text);
   line-height: 1.45;
+}
+
+/* Awards value with inline icon marker — icon doesn't shrink and stays
+   pinned to the first line even when there are multiple awards listed. */
+.project-meta__value--award {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35em;
+}
+
+.project-meta__award-icon {
+  flex-shrink: 0;
+  width: auto;
+  height: 1.5em;
+  margin-top: 0;
+}
+
+.project-meta__award-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-meta__award-link {
+  text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+.project-meta__award-link:hover {
+  opacity: 0.6;
 }
 
 .project-body__copy p {
