@@ -250,8 +250,37 @@ body {
 
 .bg-zone-combined {
   position: relative;
-  z-index: 0;
+  z-index: -2;
   overflow: hidden;
+}
+
+/* Award icon anchor — see the comment on .awards__icon-anchor in
+   index.html. z-index: -1 sits below .work's z-index: 0 (hiding the
+   icon's top half behind the black Work band) and above
+   .bg-zone-combined's z-index: -2 (keeping the icon's bottom half in
+   front of the Awards zone's paper-tile background). Both .work and
+   .bg-zone-combined establish their own stacking contexts (position +
+   explicit z-index), so page-wrapper's/body's background-color is
+   never exposed by this — a stacking-context root's own background
+   always paints behind all of its descendants, regardless of how
+   negative a descendant's z-index is. */
+.awards__icon-anchor {
+  position: relative;
+  height: 0;
+  z-index: -1;
+}
+
+.awards__icon-anchor .container {
+  position: relative;
+}
+
+.awards__icon {
+  position: absolute;
+  top: -10px;
+  right: 1.5rem; /* matches .award's own right padding, so it lines up
+                    with the right edge of the award__year column */
+  width: 100px;
+  height: auto;
 }
 
 img { display: block; max-width: 100%; }
@@ -1152,6 +1181,10 @@ ul { list-style: none; }
 
 .client__logo--xl {
   height: 59.85px;
+}
+
+.client__logo--xxl {
+  height: 54px;
 }
 
 @keyframes clientsTicker {
