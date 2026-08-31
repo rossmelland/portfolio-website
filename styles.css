@@ -213,6 +213,21 @@ body {
   overflow: hidden;
 }
 
+/* Gives <main> its own stacking context so negative-z-index children
+   (.bg-zone-combined: -2, .awards__icon-anchor: -1) stay contained
+   within it instead of resolving against .page-wrapper's context —
+   without this, those negative z-indexes placed <main>'s own (plain,
+   unstyled) box ABOVE its own descendants in paint/hit-test order,
+   which silently ate hover/click on everything inside them (the
+   Awards row hover, most visibly). z-index: 0 keeps <main> exactly
+   where it already sat relative to .page-wrapper's other positioned
+   children (.nav: 100, .footer: 0) — this only changes what's
+   contained *inside* <main>, not how <main> itself stacks. */
+main {
+  position: relative;
+  z-index: 0;
+}
+
 .footer__reveal-inner {
   will-change: transform;
 }
