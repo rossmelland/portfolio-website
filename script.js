@@ -6,6 +6,45 @@ const nav = document.getElementById('nav');
 const navToggle = document.getElementById('navToggle');
 const navLinks = document.getElementById('navLinks');
 
+/* .nav.scrolled carries backdrop-filter for the frosted-glass effect.
+   Per spec, backdrop-filter (like transform, filter, perspective,
+   will-change naming any of those, or contain: paint/layout) makes an
+   element the containing block for any position:fixed descendant —
+   so .nav__links (position:fixed; inset:0 at mobile widths, to become
+   the fullscreen menu panel) was resolving inset:0 against .nav's own
+   ~90px bar instead of the viewport, which is what let items render
+   above/below the panel instead of centered within a full-screen one.
+   Fix: relocate .nav__links out from under .nav — but ONLY at mobile
+   widths, where it's actually rendered as the fixed overlay. At
+   desktop it's a plain flex item alongside the logo (no position
+   override), so leaving it inside .nav__inner there means desktop
+   needs zero CSS changes and keeps working exactly as it always has;
+   duplicating .nav's own height/padding math into a second, desktop-
+   only rule set to re-dock it elsewhere would just be a second place
+   that could drift out of sync with .nav's actual sizing. */
+function initMobileMenuPortal() {
+  if (!navLinks) return;
+
+  const desktopParent = navLinks.parentElement;
+  const desktopNextSibling = navLinks.nextElementSibling;
+  const mobileParent = document.querySelector('.page-wrapper') || document.body;
+  const mql = window.matchMedia('(max-width: 768px)');
+
+  function applyPlacement(isMobile) {
+    if (isMobile) {
+      if (navLinks.parentElement !== mobileParent) {
+        mobileParent.insertBefore(navLinks, nav.nextSibling);
+      }
+    } else if (navLinks.parentElement !== desktopParent) {
+      if (desktopNextSibling) desktopParent.insertBefore(navLinks, desktopNextSibling);
+      else desktopParent.appendChild(navLinks);
+    }
+  }
+
+  applyPlacement(mql.matches);
+  mql.addEventListener('change', e => applyPlacement(e.matches));
+}
+
 function updateNavTheme() {
   const navBottom = nav.offsetHeight;
   const lightSections = document.querySelectorAll('.project-main, .project-back');
@@ -17,12 +56,64 @@ function updateNavTheme() {
   nav.classList.toggle('nav--light-section', overLight);
 }
 
+/* Auto-hide on scroll direction — no idle timer, direction only.
+   lastDirectionY is only updated once a scroll delta clears
+   NAV_HIDE_THRESHOLD, so a run of sub-threshold jitter keeps
+   comparing against the last *confirmed* position instead of
+   drifting frame-to-frame — that's what makes small jitters cancel
+   out instead of accumulating into an accidental hide/show. */
+const NAV_HIDE_THRESHOLD = 8;
+let lastDirectionY = window.scrollY;
+
 window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 40);
+  const y = window.scrollY;
+
+  if (y <= 0) {
+    nav.classList.remove('nav--hidden');
+    lastDirectionY = y;
+  } else {
+    const delta = y - lastDirectionY;
+    if (delta > NAV_HIDE_THRESHOLD) {
+      nav.classList.add('nav--hidden');
+      lastDirectionY = y;
+    } else if (delta < -NAV_HIDE_THRESHOLD) {
+      nav.classList.remove('nav--hidden');
+      lastDirectionY = y;
+    }
+  }
+
+  nav.classList.toggle('scrolled', y > 40);
   updateNavTheme();
 }, { passive: true });
 
 updateNavTheme();
+
+/* ============================================================
+   NAV — logo swap on scroll past the hero
+   Homepage only: case-study pages have no #hero, so this is a no-op
+   there and their nav keeps the single square mark it already has.
+   IntersectionObserver's rootMargin shrinks the observed viewport by
+   the nav's own height, so "not intersecting" fires exactly when the
+   hero's bottom edge has scrolled up past the nav bar — not just
+   whenever any part of the hero starts leaving the viewport. */
+function initLogoSwap() {
+  const hero = document.getElementById('hero');
+  if (!hero) return;
+
+  if (!('IntersectionObserver' in window)) {
+    nav.classList.add('nav--past-hero');
+    return;
+  }
+
+  const navHeight = nav.offsetHeight;
+  const observer = new IntersectionObserver(([entry]) => {
+    nav.classList.toggle('nav--past-hero', !entry.isIntersecting);
+  }, { rootMargin: `-${navHeight}px 0px 0px 0px`, threshold: 0 });
+
+  observer.observe(hero);
+}
+
+initMobileMenuPortal();
 
 if (navToggle) {
   navToggle.addEventListener('click', () => {
@@ -1215,6 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBgTiles();
   initContactScroll();
   initLightbox();
+  initLogoSwap();
 
   if ('IntersectionObserver' in window) {
     observeFadeElements();

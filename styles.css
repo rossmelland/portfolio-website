@@ -159,7 +159,15 @@
   --text-body:    1rem;
   --text-subhead: 1.625rem;
   --text-display: 2.5rem;
-  --text-hero:    clamp(3rem, 7vw, 6.5rem);
+  /* Floor lowered from 3rem to 2rem so the longest single-word case
+     study title ('#12OfficialVaginas', gynaGuard) fits its container
+     at 375px with no overflow (exact fit is ~35.5px/2.22rem there;
+     2rem leaves a safety margin). 7vw crosses above the new floor at
+     ~457px viewport width, same as before that point — unaffected —
+     so nothing changes at 768px (53.76px) or 1440px (100.8px); only
+     narrower viewports (~480px and below) actually see a smaller
+     floor value than previously. */
+  --text-hero:    clamp(2rem, 7vw, 6.5rem);
 
   --reveal-duration: 0.85s;
   --reveal-ease:     cubic-bezier(0.22, 1, 0.36, 1);
@@ -396,6 +404,18 @@ ul { list-style: none; }
   transition: var(--transition);
 }
 
+/* Auto-hide on scroll direction (script.js). transform triggers its
+   own stacking context, same as position+z-index already did — .nav
+   was already isolated from the rest of the page this way, so this
+   changes nothing about how it stacks against other sections; it
+   only affects ordering *within* .nav, which has no descendants that
+   depend on painting above/below anything outside it. The custom
+   cursor is a separate fixed element appended to <body>, not a
+   descendant of .nav, so it's unaffected either way. */
+.nav--hidden {
+  transform: translateY(-100%);
+}
+
 .nav.scrolled {
   background: rgba(250, 247, 240, 0.92);
   backdrop-filter: blur(12px);
@@ -428,6 +448,50 @@ ul { list-style: none; }
   width: auto;
   display: block;
   mix-blend-mode: multiply;
+}
+
+/* Homepage-only logo crossfade (script.js's initLogoSwap): the
+   wordmark (about-title.png, ~2.41:1) and the square mark stacked in
+   one fixed-width frame, both left-aligned at its top-left corner, so
+   swapping which one is opaque never changes the frame's own box —
+   .nav__links never moves. Width is fixed to the WIDER asset (the
+   wordmark) at the shared 60px logo height: 60 * 4672/1938 ≈ 144.6px,
+   leaving empty space to the right of the narrower square mark rather
+   than centering or resizing it. Case-study pages keep the plain
+   single <img>.nav__logo (rule above) — they have no #hero, so there's
+   nothing for initLogoSwap to observe and no need for the frame. */
+.nav__logo-frame {
+  position: relative;
+  display: block;
+  height: 60px;
+  width: calc(60px * 4672 / 1938);
+}
+
+.nav__logo-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 60px;
+  width: auto;
+  display: block;
+  mix-blend-mode: multiply;
+  transition: opacity var(--transition);
+}
+
+.nav__logo-img--word {
+  opacity: 1;
+}
+
+.nav__logo-img--mark {
+  opacity: 0;
+}
+
+.nav--past-hero .nav__logo-img--word {
+  opacity: 0;
+}
+
+.nav--past-hero .nav__logo-img--mark {
+  opacity: 1;
 }
 
 .nav__links {
@@ -747,7 +811,16 @@ ul { list-style: none; }
 
 .work__card-overlay-title {
   font-family: var(--font-display);
-  font-size: var(--text-display);
+  /* Fixed at --text-display (2.5rem) before, with no way to shrink for
+     narrow cards — the longest single-word title ('#12OfficialVaginas')
+     overflowed its card at 375px. Scoped clamp instead of touching
+     --text-display itself, since that variable is also shared by
+     .hero__bio and .footer__heading. 8vw reaches the 2.5rem ceiling at
+     500px viewport width, so 1440/768/480 are all unaffected (still
+     40px); only sub-500px cards actually shrink, down to a 1.75rem
+     floor that keeps the longest title inside its box at 375px with a
+     safety margin (exact fit there is ~31px/1.94rem). */
+  font-size: clamp(1.75rem, 8vw, var(--text-display));
   font-weight: 600;
   text-transform: none;
   line-height: 1.05;
