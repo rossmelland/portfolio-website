@@ -1141,6 +1141,30 @@ ul { list-style: none; }
   margin: var(--space-xl) 0;
 }
 
+/* Reusable 16:9 grid for case-study pages — two-per-row, sharing
+   --grid-gap and --space-xl with .project-gallery so all the grid
+   layouts read as one consistent rhythm wherever they're mixed on a
+   page. Plain grid auto-placement already left-aligns a partial final
+   row instead of stretching or centering it — no extra rule needed
+   for that. No overlay, hover, or video-specific styling; images only,
+   same as .project-gallery. Two columns is already the 768px layout,
+   so there's no separate breakpoint rule for it — only 480px collapses
+   further, to one column. */
+.project-video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--grid-gap);
+  margin: var(--space-xl) 0;
+}
+
+.project-video-grid__img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius);
+}
+
 .project-credit {
   font-size: var(--text-small);
   font-weight: 200;
@@ -1226,6 +1250,10 @@ ul { list-style: none; }
   }
 
   .project-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .project-video-grid {
     grid-template-columns: 1fr;
   }
 }
