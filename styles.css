@@ -167,6 +167,11 @@
 
   --radius: 2px;
   --transition: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Shared by the homepage work grid and case-study image grids so the
+     two stay in sync — change once here, both follow. */
+  --grid-gap:        1rem;
+  --grid-gap-mobile: 0.75rem;
 }
 
 html {
@@ -679,7 +684,7 @@ ul { list-style: none; }
 .work__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: var(--grid-gap);
 }
 
 .work__card-link {
@@ -1097,6 +1102,24 @@ ul { list-style: none; }
   margin-bottom: 0;
 }
 
+/* Reusable stacked image grid for case-study pages — two-per-row, square,
+   matching the homepage .work__grid sizing via the same --grid-gap
+   variables. No overlay, hover, or link behavior; that's a later step. */
+.project-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--grid-gap);
+  margin: var(--space-xl) 0;
+}
+
+.project-gallery__img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius);
+}
+
 .project-credit {
   font-size: var(--text-small);
   font-weight: 200;
@@ -1178,6 +1201,10 @@ ul { list-style: none; }
   }
 
   .project-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .project-gallery {
     grid-template-columns: 1fr;
   }
 }
@@ -1517,7 +1544,7 @@ ul { list-style: none; }
 
   .work__grid {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: var(--grid-gap-mobile);
   }
 
 }
