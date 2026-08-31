@@ -102,6 +102,13 @@
   height: 48px;
 }
 
+/* Hides the custom arrow while hovering a zoomed lightbox image, so
+   the native grab/grabbing cursor (styles.css .lightbox__image rules)
+   can show instead — see initCursor()'s comment. */
+.cursor--hidden-for-native {
+  opacity: 0;
+}
+
 .cursor__mark {
   display: block;
   width: 100%;
@@ -1120,6 +1127,20 @@ ul { list-style: none; }
   border-radius: var(--radius);
 }
 
+/* Reusable full-width single image for case-study pages — no fixed
+   aspect-ratio or max-height, so it always renders at its native ratio
+   at the full container width (landscape, portrait or square). A tall
+   portrait image is allowed to run taller than the viewport; that's
+   expected, not a bug. Shares --space-xl with .project-gallery's
+   margin so the two layouts read as one consistent rhythm wherever
+   they're mixed on a page. */
+.project-image-full {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: var(--space-xl) 0;
+}
+
 .project-credit {
   font-size: var(--text-small);
   font-weight: 200;
@@ -1599,6 +1620,38 @@ ul { list-style: none; }
   width: auto;
   height: auto;
   display: block;
+  /* zoom/pan is applied as a live transform (script.js) with no
+     transition of its own — wheel, pinch and drag all need to track
+     the pointer with zero lag, same reasoning as the custom cursor's
+     position never being transitioned. Disabling native touch
+     gestures and drag/selection here is what lets our own pinch/pan
+     handling own the gesture instead of fighting the browser's. */
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Applied only for the brief double-click/double-tap toggle between
+   fit and zoomed — the one zoom transition that should visibly
+   animate. Reduced motion already collapses this globally via the
+   *, *::before, *::after rule near the bottom of this file. */
+.lightbox__image--animated {
+  transition: transform var(--transition);
+}
+
+/* Shown only while hovering a currently-zoomed image with a real
+   mouse — initCursor() hides the custom arrow specifically for this
+   case (see its comment) so the browser's own grab/grabbing icon can
+   stand in as the "you can drag this" affordance, without the two
+   cursor systems rendering on top of each other. Specificity here
+   (a two-class selector) beats the sitewide `cursor: none !important`
+   reset despite the tie on !important. */
+.lightbox__image.is-zoomed {
+  cursor: grab !important;
+}
+
+.lightbox__image.is-zoomed.is-panning {
+  cursor: grabbing !important;
 }
 
 .lightbox__close,

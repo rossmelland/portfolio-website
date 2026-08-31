@@ -239,13 +239,26 @@ function initCursor() {
 
   const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card, .award, .lightbox-trigger';
 
+  /* A zoomed lightbox image shows the browser's own grab/grabbing
+     cursor (styles.css) as its "you can drag this" affordance instead
+     of the custom arrow — two cursor renderers stacked on the same
+     point would just look broken. So the custom cursor hides itself
+     specifically while hovering .lightbox__image.is-zoomed, and
+     reappears the moment the pointer leaves it. */
   document.addEventListener('pointerover', e => {
     if (e.pointerType !== 'mouse') return;
+    if (e.target.closest('.lightbox__image.is-zoomed')) {
+      dot.classList.add('cursor--hidden-for-native');
+      return;
+    }
     if (e.target.closest(HOVER_TARGETS)) dot.classList.add('cursor--expanded');
   });
 
   document.addEventListener('pointerout', e => {
     if (e.pointerType !== 'mouse') return;
+    if (e.target.closest('.lightbox__image.is-zoomed')) {
+      dot.classList.remove('cursor--hidden-for-native');
+    }
     if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
   });
 
@@ -782,20 +795,156 @@ function initLightbox() {
   let currentIndex = -1;
   let lastFocused = null;
   let closeTimer = null;
-  let touchStartX = null;
+  imgEl.draggable = false;
+
+  /* ----------------------------------------------------------
+     ZOOM & PAN
+     scale/panX/panY describe imgEl's transform: `translate(panX,
+     panY) scale(scale)`, transform-origin fixed at center (imgEl's
+     center coincides with the viewport's center, since .lightbox is a
+     full-viewport flex-centered box and transforms don't move the
+     underlying layout box). That geometry makes the math for
+     "zoom anchored at an arbitrary screen point" reduce to a simple
+     closed-form update — see setZoom()'s comment.
+
+     baseW/baseH are imgEl's rendered width/height AT scale 1 (i.e.
+     its normal max-width/max-height-constrained fit-to-viewport
+     size) — captured once per image via measureBase(), right after
+     load, before any zoom is ever applied. maxScale is derived from
+     that: capped at 4x, but never past the point where the image
+     would render above its own native resolution (which would just
+     be upscaled blur, not more detail).
+     ---------------------------------------------------------- */
+  const MIN_SCALE = 1;
+  const MAX_SCALE_CAP = 4;
+  const DOUBLE_TAP_MS = 300;
+  const DOUBLE_TAP_DIST = 30;
+  const TAP_MOVE_TOLERANCE = 6;
+  const SWIPE_THRESHOLD = 40;
+
+  let scale = MIN_SCALE;
+  let panX = 0;
+  let panY = 0;
+  let baseW = 0;
+  let baseH = 0;
+  let maxScale = MIN_SCALE;
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
+  function isZoomed() {
+    return scale > MIN_SCALE + 0.001;
+  }
+
+  function canZoom() {
+    return maxScale > MIN_SCALE + 0.001;
+  }
+
+  function applyTransform() {
+    imgEl.style.transform = (scale === MIN_SCALE && panX === 0 && panY === 0)
+      ? ''
+      : `translate(${panX}px, ${panY}px) scale(${scale})`;
+    imgEl.classList.toggle('is-zoomed', isZoomed());
+  }
+
+  function clampPan() {
+    const scaledW = baseW * scale;
+    const scaledH = baseH * scale;
+    const maxX = Math.max(0, (scaledW - window.innerWidth) / 2);
+    const maxY = Math.max(0, (scaledH - window.innerHeight) / 2);
+    panX = clamp(panX, -maxX, maxX);
+    panY = clamp(panY, -maxY, maxY);
+  }
+
+  // Anchors a zoom change at an arbitrary screen point (cursor,
+  // pinch midpoint, double-click/tap point) so that the image content
+  // under that point stays visually fixed as scale changes. Derived
+  // from: screenPos(p) = viewportCenter + pan + scale * (p - imgCenter).
+  // Solving "same screenPos before/after" for the new pan, in terms of
+  // the ratio k = newScale / oldScale, gives a closed form that needs
+  // no DOM measurement beyond the anchor point itself:
+  //   pan' = (anchor - viewportCenter) * (1 - k) + k * pan
+  function setZoom(newScaleRaw, anchorX, anchorY) {
+    const newScale = clamp(newScaleRaw, MIN_SCALE, maxScale);
+    if (Math.abs(newScale - scale) < 0.0001) return;
+    const k = newScale / scale;
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    panX = (anchorX - cx) * (1 - k) + k * panX;
+    panY = (anchorY - cy) * (1 - k) + k * panY;
+    scale = newScale;
+    clampPan();
+    applyTransform();
+  }
+
+  function resetZoomInstant() {
+    scale = MIN_SCALE;
+    panX = 0;
+    panY = 0;
+    applyTransform();
+  }
+
+  function toggleZoom(clientX, clientY) {
+    if (!canZoom()) return;
+    const animate = !reduceMotion();
+    if (animate) imgEl.classList.add('lightbox__image--animated');
+    if (isZoomed()) {
+      resetZoomInstant();
+    } else {
+      setZoom(Math.min(2, maxScale), clientX, clientY);
+    }
+    if (animate) {
+      setTimeout(() => imgEl.classList.remove('lightbox__image--animated'), 350);
+    }
+  }
+
+  // Captured at scale 1 before any transform is applied, so it reads
+  // imgEl's real fit-to-viewport box — never a post-transform rect.
+  function measureBase() {
+    scale = MIN_SCALE;
+    panX = 0;
+    panY = 0;
+    imgEl.style.transform = '';
+    baseW = imgEl.offsetWidth;
+    baseH = imgEl.offsetHeight;
+    const nativeRatio = baseW > 0 ? imgEl.naturalWidth / baseW : MAX_SCALE_CAP;
+    maxScale = clamp(nativeRatio, MIN_SCALE, MAX_SCALE_CAP);
+    applyTransform();
+  }
+
+  window.addEventListener('resize', () => {
+    if (!overlay.classList.contains('lightbox--active')) return;
+    measureBase();
+  });
+
+  /* ---------------------------------------------------------- */
 
   function show(index) {
     currentIndex = index;
     const trigger = triggers[index];
     imgEl.src = trigger.currentSrc || trigger.src;
     imgEl.alt = trigger.alt || '';
+    touchMode = 'idle';
+    if (imgEl.complete) {
+      measureBase();
+    } else {
+      imgEl.addEventListener('load', measureBase, { once: true });
+    }
   }
 
   function open(index, originEl) {
     lastFocused = originEl;
     clearTimeout(closeTimer);
-    show(index);
+    // display:flex has to land BEFORE show() can measure anything: if
+    // the image is already cached, measureBase() can run synchronously
+    // off imgEl.complete, and offsetWidth/offsetHeight both read 0 on
+    // a display:none subtree — that raced baseW/baseH to 0 and made
+    // every pan clamp to nothing. Reading offsetWidth forces a
+    // synchronous layout, so setting the class first is enough; no
+    // rAF wait needed for this part.
     overlay.classList.add('lightbox--active');
+    show(index);
     overlay.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKeydown);
@@ -815,6 +964,7 @@ function initLightbox() {
     overlay.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
     document.removeEventListener('keydown', onKeydown);
+    resetZoomInstant();
 
     const toRefocus = lastFocused;
     clearTimeout(closeTimer);
@@ -850,17 +1000,170 @@ function initLightbox() {
   prevBtn.addEventListener('click', () => step(-1));
   nextBtn.addEventListener('click', () => step(1));
 
+  // Wheel always drives zoom, never the page — the overlay covers the
+  // whole viewport and preventDefault fires unconditionally so a
+  // scroll gesture can never leak through or land as a no-op scroll.
+  overlay.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = Math.exp(-e.deltaY * 0.0025);
+    setZoom(scale * factor, e.clientX, e.clientY);
+  }, { passive: false });
+
+  // dblclick is reliable for real mouse double-clicks, but on a
+  // hybrid touch+mouse device a double TAP also replays as two
+  // synthetic mouse clicks close together, which browsers can also
+  // report as a native 'dblclick' — exactly the touch/mouse ambiguity
+  // already solved for the custom cursor in initCursor(). Track it
+  // the same way here and defer to the manual touch double-tap path
+  // (handlePossibleDoubleTap) for anything that isn't a real mouse.
+  let lastImgPointerWasMouse = true;
+  imgEl.addEventListener('pointerdown', e => {
+    lastImgPointerWasMouse = e.pointerType === 'mouse';
+  });
+
+  imgEl.addEventListener('dblclick', e => {
+    if (!lastImgPointerWasMouse) return;
+    e.stopPropagation();
+    toggleZoom(e.clientX, e.clientY);
+  });
+
+  // Desktop click-drag panning — only engages once zoomed in, so it
+  // never interferes with a plain click at fit-to-viewport.
+  let dragging = false;
+  let dragStart = null;
+
+  imgEl.addEventListener('mousedown', e => {
+    if (!isZoomed()) return;
+    e.preventDefault();
+    dragging = true;
+    dragStart = { x: e.clientX, y: e.clientY, panX, panY };
+    imgEl.classList.add('is-panning');
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    panX = dragStart.panX + (e.clientX - dragStart.x);
+    panY = dragStart.panY + (e.clientY - dragStart.y);
+    clampPan();
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    imgEl.classList.remove('is-panning');
+  });
+
+  /* ----------------------------------------------------------
+     TOUCH — one gesture at a time: 'swipe' (navigate, only when at
+     fit-to-viewport), 'pan' (drag, only once zoomed in — this is the
+     key conflict the brief calls out: the same one-finger drag must
+     do one or the other, never both), or 'pinch' (always available).
+     A tap that doesn't cross TAP_MOVE_TOLERANCE is checked against
+     the previous tap for double-tap-to-toggle-zoom.
+     ---------------------------------------------------------- */
+  let touchMode = 'idle';
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchMoved = false;
+  let panTouchStart = null;
+  let pinchStartDistance = 0;
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+
+  function touchDistance(t0, t1) {
+    return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+  }
+
+  function touchMidpoint(t0, t1) {
+    return { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
+  }
+
+  function handlePossibleDoubleTap(x, y) {
+    const now = Date.now();
+    const dist = Math.hypot(x - lastTapX, y - lastTapY);
+    if (now - lastTapTime < DOUBLE_TAP_MS && dist < DOUBLE_TAP_DIST) {
+      toggleZoom(x, y);
+      lastTapTime = 0; // consumed — a third quick tap starts fresh, not a re-trigger
+    } else {
+      lastTapTime = now;
+      lastTapX = x;
+      lastTapY = y;
+    }
+  }
+
   overlay.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].clientX;
-  }, { passive: true });
+    touchMoved = false;
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      if (isZoomed()) {
+        touchMode = 'pan';
+        panTouchStart = { x: t.clientX, y: t.clientY, panX, panY };
+      } else {
+        touchMode = 'swipe';
+      }
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      touchMode = 'pinch';
+      pinchStartDistance = touchDistance(e.touches[0], e.touches[1]);
+    }
+  }, { passive: false });
+
+  overlay.addEventListener('touchmove', e => {
+    if (touchMode === 'pan' && e.touches.length === 1) {
+      e.preventDefault();
+      const t = e.touches[0];
+      if (Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY) > TAP_MOVE_TOLERANCE) touchMoved = true;
+      panX = panTouchStart.panX + (t.clientX - panTouchStart.x);
+      panY = panTouchStart.panY + (t.clientY - panTouchStart.y);
+      clampPan();
+      applyTransform();
+    } else if (touchMode === 'pinch' && e.touches.length === 2) {
+      e.preventDefault();
+      const dist = touchDistance(e.touches[0], e.touches[1]);
+      const mid = touchMidpoint(e.touches[0], e.touches[1]);
+      setZoom(scale * (dist / pinchStartDistance), mid.x, mid.y);
+      pinchStartDistance = dist;
+    } else if (touchMode === 'swipe') {
+      const t = e.touches[0];
+      if (Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY) > TAP_MOVE_TOLERANCE) touchMoved = true;
+    }
+  }, { passive: false });
 
   overlay.addEventListener('touchend', e => {
-    if (touchStartX === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const SWIPE_THRESHOLD = 40;
-    if (dx > SWIPE_THRESHOLD) step(-1);
-    else if (dx < -SWIPE_THRESHOLD) step(1);
-    touchStartX = null;
+    const t = e.changedTouches[0];
+
+    if (touchMode === 'swipe') {
+      const dx = t.clientX - touchStartX;
+      if (Math.abs(dx) > SWIPE_THRESHOLD) {
+        step(dx > 0 ? -1 : 1);
+      } else if (!touchMoved) {
+        handlePossibleDoubleTap(t.clientX, t.clientY);
+      }
+    } else if (touchMode === 'pan' && !touchMoved) {
+      handlePossibleDoubleTap(t.clientX, t.clientY);
+    }
+
+    if (e.touches.length === 0) {
+      touchMode = 'idle';
+    } else if (e.touches.length === 1) {
+      // Dropped from a pinch (or repositioned during a pan) to one
+      // finger still down — resume tracking cleanly from here rather
+      // than carrying over stale start coordinates.
+      const remaining = e.touches[0];
+      if (isZoomed()) {
+        touchMode = 'pan';
+        panTouchStart = { x: remaining.clientX, y: remaining.clientY, panX, panY };
+      } else {
+        touchMode = 'swipe';
+        touchStartX = remaining.clientX;
+        touchStartY = remaining.clientY;
+      }
+      touchMoved = false;
+    }
   }, { passive: true });
 }
 
