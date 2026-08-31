@@ -1551,6 +1551,101 @@ ul { list-style: none; }
 
 
 /* ============================================================
+   LIGHTBOX — fullscreen image viewer
+   Scoped to .lightbox-trigger rather than the gallery itself, so the
+   same component works for the grid now and the full-width single
+   image layout later — just add the class. Markup is injected once
+   by initLightbox() (script.js) and appended to <body>, the same
+   pattern the custom cursor uses, so no per-page overlay HTML is
+   hand-authored. Sits at z-index 5000: above the nav (100) and all
+   page content, below the custom cursor (99999) so the cursor still
+   renders — and still blends via mix-blend-mode: difference — on top
+   of it. See initLightbox()'s comment for why that blend survives.
+   The open/close fade uses --transition, and reduced-motion is
+   already handled globally (the *, *::before, *::after rule near the
+   bottom of this file collapses all transition durations), so no
+   extra override is needed here.
+   ============================================================ */
+
+.lightbox-trigger {
+  cursor: pointer;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  /* --color-text's RGB value at reduced alpha — the same numbers
+     --color-border already reuses for its translucent variant. */
+  background: rgba(13, 13, 13, 0.94);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.lightbox--active {
+  display: flex;
+}
+
+.lightbox--visible {
+  opacity: 1;
+}
+
+.lightbox__image {
+  max-width: 88vw;
+  max-height: 82vh;
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+.lightbox__close,
+.lightbox__nav {
+  position: absolute;
+  background: none;
+  border: none;
+  padding: var(--space-xs);
+  color: var(--color-bg);
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.lightbox__close:hover,
+.lightbox__nav:hover {
+  opacity: 0.6;
+}
+
+.lightbox__close {
+  top: var(--space-md);
+  right: var(--space-md);
+}
+
+.lightbox__nav--prev {
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lightbox__nav--next {
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lightbox--single .lightbox__nav {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .lightbox__image {
+    max-width: 92vw;
+    max-height: 78vh;
+  }
+}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 

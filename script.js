@@ -198,21 +198,54 @@ function initCursor() {
   dot.setAttribute('aria-hidden', 'true');
   document.body.appendChild(dot);
 
-  document.addEventListener('mousemove', e => {
+  /* hover/pointer media features describe the DEVICE's capability, not
+     which input produced any given event — a touchscreen Windows
+     laptop, Surface, or iPad+trackpad still reports hover:hover and
+     pointer:fine (a real mouse/trackpad is present), so the guard
+     above passes and all of this wires up exactly as it would on a
+     plain desktop. Every tap on that touchscreen is then replayed by
+     the browser as a compatibility mouse-event sequence — mousemove,
+     mouseover, mousedown, mouseup, click, at the tap coordinates —
+     purely so old sites that only understand mouse events still work.
+     Listening for 'mousemove'/'mouseover'/'click' can't tell that
+     sequence apart from a real mouse move, which is what let taps
+     summon the cursor to wherever they landed, including onto the
+     lightbox's images and controls. Pointer Events fix this: every
+     pointer event carries the actual pointerType ('mouse', 'touch' or
+     'pen') of whatever produced it, so each listener below checks
+     that per-event instead of trusting the one-time capability check
+     to also describe the current interaction. lastPointerWasMouse is
+     tracked from 'pointerdown' (capture phase, so it's set before the
+     'click' listener below ever runs) because the plain 'click' event
+     itself carries no pointerType to check directly. */
+  let lastPointerWasMouse = true;
+
+  function hide() {
+    dot.style.transform = 'translate(-200px, -200px)';
+    dot.classList.remove('cursor--expanded');
+  }
+
+  document.addEventListener('pointerdown', e => {
+    lastPointerWasMouse = e.pointerType === 'mouse';
+    if (!lastPointerWasMouse) hide();
+  }, { capture: true });
+
+  document.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
     dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
   });
 
-  document.addEventListener('mouseleave', () => {
-    dot.style.transform = 'translate(-200px, -200px)';
-  });
+  document.addEventListener('mouseleave', hide);
 
-  const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card, .award';
+  const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card, .award, .lightbox-trigger';
 
-  document.addEventListener('mouseover', e => {
+  document.addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse') return;
     if (e.target.closest(HOVER_TARGETS)) dot.classList.add('cursor--expanded');
   });
 
-  document.addEventListener('mouseout', e => {
+  document.addEventListener('pointerout', e => {
+    if (e.pointerType !== 'mouse') return;
     if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
   });
 
@@ -233,6 +266,7 @@ function initCursor() {
   });
 
   document.addEventListener('click', () => {
+    if (!lastPointerWasMouse) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     mark.classList.remove('pop', 'grow');
     void mark.offsetWidth;
@@ -693,6 +727,144 @@ function initBgTiles() {
 }
 
 /* ============================================================
+   LIGHTBOX — fullscreen image viewer
+   Opens on any .lightbox-trigger element found on the page (the case
+   study image grid today; the future full-width single image just
+   needs the same class, no JS changes). All triggers on the page
+   share one sequence in DOM order, so prev/next cycles through them
+   together. The overlay markup is built once and appended straight
+   to <body> — same placement as the custom cursor in initCursor()
+   above — specifically so it sits as a plain sibling in the cursor's
+   stacking context rather than nested inside anything that isolates
+   it. .lightbox itself only sets position/z-index/opacity/background,
+   never mix-blend-mode/isolation/filter on itself, so it doesn't
+   create an isolated blending group — the cursor's
+   mix-blend-mode: difference still composites correctly over it.
+
+   WRAPPING: prev/next (and the arrow keys) wrap around — next() on
+   the last image returns to the first, prev() on the first goes to
+   the last. That's a recommendation, not a final call: the
+   alternative is to stop and disable/hide the arrow at each end.
+   ============================================================ */
+
+function initLightbox() {
+  const triggers = Array.from(document.querySelectorAll('.lightbox-trigger'));
+  if (triggers.length === 0) return;
+
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Image viewer');
+  overlay.setAttribute('aria-hidden', 'true');
+  if (triggers.length === 1) overlay.classList.add('lightbox--single');
+  overlay.innerHTML = `
+    <button type="button" class="lightbox__close" aria-label="Close">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button type="button" class="lightbox__nav lightbox__nav--prev" aria-label="Previous image">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button type="button" class="lightbox__nav lightbox__nav--next" aria-label="Next image">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <img class="lightbox__image" src="" alt="" />
+  `;
+  document.body.appendChild(overlay);
+
+  const imgEl = overlay.querySelector('.lightbox__image');
+  const closeBtn = overlay.querySelector('.lightbox__close');
+  const prevBtn = overlay.querySelector('.lightbox__nav--prev');
+  const nextBtn = overlay.querySelector('.lightbox__nav--next');
+
+  let currentIndex = -1;
+  let lastFocused = null;
+  let closeTimer = null;
+  let touchStartX = null;
+
+  function show(index) {
+    currentIndex = index;
+    const trigger = triggers[index];
+    imgEl.src = trigger.currentSrc || trigger.src;
+    imgEl.alt = trigger.alt || '';
+  }
+
+  function open(index, originEl) {
+    lastFocused = originEl;
+    clearTimeout(closeTimer);
+    show(index);
+    overlay.classList.add('lightbox--active');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeydown);
+
+    // Double rAF so the display:none -> flex swap lands in the DOM
+    // before the opacity transition to 1 starts (same idiom as
+    // animateNav()/animateHero() above).
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        overlay.classList.add('lightbox--visible');
+      });
+    });
+  }
+
+  function close() {
+    overlay.classList.remove('lightbox--visible');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKeydown);
+
+    const toRefocus = lastFocused;
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      overlay.classList.remove('lightbox--active');
+      imgEl.src = '';
+    }, reduceMotion() ? 0 : 350);
+
+    if (toRefocus) toRefocus.focus();
+  }
+
+  function step(delta) {
+    show((currentIndex + delta + triggers.length) % triggers.length);
+  }
+
+  function onKeydown(e) {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+  }
+
+  triggers.forEach((trigger, i) => {
+    trigger.tabIndex = -1; // not a tab stop; just a valid .focus() target on close
+    trigger.addEventListener('click', () => open(i, trigger));
+  });
+
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) close();
+  });
+
+  imgEl.addEventListener('click', e => e.stopPropagation());
+  closeBtn.addEventListener('click', close);
+  prevBtn.addEventListener('click', () => step(-1));
+  nextBtn.addEventListener('click', () => step(1));
+
+  overlay.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].clientX;
+  }, { passive: true });
+
+  overlay.addEventListener('touchend', e => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const SWIPE_THRESHOLD = 40;
+    if (dx > SWIPE_THRESHOLD) step(-1);
+    else if (dx < -SWIPE_THRESHOLD) step(1);
+    touchStartX = null;
+  }, { passive: true });
+}
+
+/* ============================================================
    CONTACT LINK — manual scroll-to-bottom
    The footer is position:sticky, so its on-screen rect stays near
    the viewport bottom at almost any scroll position. That confuses
@@ -739,6 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollParallax();
   initBgTiles();
   initContactScroll();
+  initLightbox();
 
   if ('IntersectionObserver' in window) {
     observeFadeElements();
