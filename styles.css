@@ -1077,6 +1077,7 @@ ul { list-style: none; }
   object-fit: cover;
   pointer-events: none;
   z-index: 3;
+  display: none; /* TEMP: visual test, worn border hidden on work cards only — see chat for revert instructions */
 }
 
 /* ============================================================
