@@ -501,9 +501,10 @@ ul { list-style: none; }
 }
 
 .nav__links a {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--color-text);
   position: relative;
   isolation: isolate;
@@ -1271,9 +1272,9 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: var(--text-small);
-  font-weight: 200;
-  letter-spacing: 0.08em;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   transition: color var(--transition);
