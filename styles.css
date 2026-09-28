@@ -497,7 +497,7 @@ ul { list-style: none; }
 .nav__links {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  gap: 1.5rem;
 }
 
 .nav__links a {
@@ -508,26 +508,48 @@ ul { list-style: none; }
   color: var(--color-text);
   position: relative;
   isolation: isolate;
-  overflow: hidden;
   padding: 0.2rem 0.6rem;
   display: inline-flex;
   align-items: center;
   transition: color 0.4s ease;
 }
 
-.nav__links a::before {
+/* Hover stamp: a hand-drawn black shape per link (rotation baked into
+   the PNG, so no CSS rotate). Sized in em off the link's own font-size
+   so it tracks the nav type if that changes — height is fixed at
+   --stamp-h and width follows each PNG's aspect ratio (all 176px
+   tall). The shapes sit almost dead-centre in their canvases (≤2px
+   off at 176px), so plain 50/50 centring on the link lines the black
+   up behind the word, plus a 0.11em lift because uppercase PPMori
+   sits above the middle of the line box (no descenders to balance it). Wider than the link box, so no overflow:hidden
+   on the <a>; the 2.5rem gap between links leaves room for the bleed.
+   Revealed with a left-to-right clip-path wipe rather than scaleX so
+   the torn edges never get squashed mid-transition. The image is set
+   in the resting state so it's already loaded before the first hover. */
+.nav__links a::before,
+.nav__back-label::before {
+  --stamp-h: 2.1em;
   content: '';
   position: absolute;
-  inset: 0;
-  background: #0D0D0D;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.4s ease;
+  top: 50%;
+  left: 50%;
+  height: var(--stamp-h);
+  width: calc(var(--stamp-h) * var(--stamp-ratio, 2.375));
+  background: var(--stamp-image) center / 100% 100% no-repeat;
+  transform: translate(-50%, calc(-50% - 0.11em));
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.4s ease;
   z-index: -1;
+  pointer-events: none;
 }
 
-.nav__links a:hover::before {
-  transform: scaleX(1);
+.nav__link--work    { --stamp-image: url('images/textures/nav-stamp-work.png');    --stamp-ratio: calc(418 / 176); }
+.nav__link--about   { --stamp-image: url('images/textures/nav-stamp-about.png');   --stamp-ratio: calc(475 / 176); }
+.nav__link--contact { --stamp-image: url('images/textures/nav-stamp-contact.png'); --stamp-ratio: calc(562 / 176); }
+
+.nav__links a:hover::before,
+.nav__back-link:hover .nav__back-label::before {
+  clip-path: inset(0 0 0 0);
 }
 
 .nav__links a:hover {
@@ -633,7 +655,7 @@ ul { list-style: none; }
   border: none;
   padding: 0;
   font-family: var(--font-body);
-  font-size: var(--text-body);
+  font-size: 1.15rem; /* matches .nav__links a */
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
@@ -683,7 +705,7 @@ ul { list-style: none; }
 }
 
 .hero__social-link {
-  font-size: var(--text-body);
+  font-size: 1.15rem; /* matches .nav__links a */
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
@@ -1277,19 +1299,33 @@ ul { list-style: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  transition: color var(--transition);
-}
-
-.nav__back-link:hover {
-  color: var(--color-text);
 }
 
 .nav--light-section .nav__back-link {
   color: var(--color-text-muted);
 }
 
-.nav--light-section .nav__back-link:hover {
-  color: var(--color-text);
+/* Same hover stamp as the homepage nav (shared ::before rule above),
+   but on the label only: the PNG is proportioned to the words, and at
+   the shared 2.1em height it leaves ~0.7em of black either side of
+   "Back to Work" — in line with Work/About/Contact — whereas stretching
+   it over the arrow too would leave ~1px. The arrow stays dark on the
+   page background (it inherits the link's colour, which doesn't change).
+   The stamp bleeds ~0.7em left of the words, more than the 0.5rem flex
+   gap, so the extra 0.4em margin keeps the black clear of the arrow's
+   shaft instead of swallowing its tail. */
+.nav__back-label {
+  margin-left: 0.4em;
+  --stamp-image: url('images/textures/nav-stamp-back-to-work.png');
+  --stamp-ratio: calc(826 / 176);
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  transition: color 0.4s ease;
+}
+
+.nav__back-link:hover .nav__back-label {
+  color: #FAF7F0;
 }
 
 .project-back {
