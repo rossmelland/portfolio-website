@@ -484,10 +484,18 @@ const BG_TILE_OVERLAP_EDGE = 0.38;   // left/right margins + all rows — fuller
 const BG_TILE_OVERLAP_CENTER = 0.30; // central content column — sparser
 const BG_TILE_CENTER_BAND = 0.6;     // middle 60% of zone width counts as "central"
 const BG_TILE_JITTER = 0.12;
-const BG_TILE_MAX_PER_ZONE = 90;
-const BG_TILE_MIN_FACTOR = 0.675;
-const BG_TILE_MAX_FACTOR = 0.775;
-const BG_TILE_MAX_DRIFT = 46;
+const BG_TILE_MAX_PER_ZONE = 240;   // ceiling, not a target: covers a ~12,000px zone up to 2560px wide
+const BG_TILE_MIN_FACTOR = 0.5;
+const BG_TILE_MAX_FACTOR = 0.85;
+const BG_TILE_MAX_DRIFT = 180;
+
+// Largest vertical drift gap two tiles can open up between them: the
+// slowest tile reaches BG_TILE_MAX_DRIFT while the fastest has covered
+// only (1 - MAX) / (1 - MIN) of that distance (126px at 0.5/0.85/180).
+// Row spacing reserves this much extra overlap so vertically adjacent
+// tiles drifting at different speeds never pull apart into a seam.
+const BG_TILE_MAX_DRIFT_DIFF =
+  BG_TILE_MAX_DRIFT * (1 - (1 - BG_TILE_MAX_FACTOR) / (1 - BG_TILE_MIN_FACTOR));
 
 function bgTilePath(setName, oneBasedIndex) {
   return `images/textures/paper-${setName}-${String(oneBasedIndex).padStart(2, '0')}.png`;
@@ -584,7 +592,7 @@ function buildBgZoneTiles(canvasEl, setName, width, height) {
 
   const { count, avgW, avgH, minW, minH } = BG_TILE_SETS[setName];
   const columns = buildBgColumns(width, avgW, minW).slice(0, 12);
-  const stepH = bgSafeStep(avgH * (1 - BG_TILE_OVERLAP_EDGE), minH);
+  const stepH = bgSafeStep(avgH * (1 - BG_TILE_OVERLAP_EDGE), minH - BG_TILE_MAX_DRIFT_DIFF);
 
   const cols = Math.max(1, columns.length);
   const maxRows = Math.max(1, Math.floor(BG_TILE_MAX_PER_ZONE / cols));
