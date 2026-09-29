@@ -475,6 +475,7 @@ const BG_TILE_EXTRA_TILT = 6; // deg, layered on a reused orientation once all 8
 // are placed like any other zone's but initBgTiles never applies scroll
 // drift to them (see update()).
 const BG_TILE_ZONES = [
+  { host: '.hero',             canvas: '.bg-tiles--hero',     set: 'white' },
   { host: '.work',             canvas: '.bg-tiles--work',     set: 'black' },
   { host: '.bg-zone-combined', canvas: '.bg-tiles--combined', set: 'white' },
   { host: '.footer',           canvas: '.bg-tiles--footer',   set: 'black', static: true },

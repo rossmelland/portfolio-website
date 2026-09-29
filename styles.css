@@ -532,10 +532,6 @@ ul { list-style: none; }
   flex-direction: column;
   padding-top: 5rem;
   padding-bottom: var(--space-md);
-  background-image: url('images/hero-bg-orange-01.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 .hero__logo-wrap {
