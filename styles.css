@@ -58,82 +58,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  cursor: none !important;
-}
-
-/* Restore native cursor on touch / coarse-pointer devices */
-@media (hover: none), (pointer: coarse) {
-  *, *::before, *::after { cursor: auto !important; }
-}
-
-/* ============================================================
-   CUSTOM CURSOR
-   ============================================================ */
-
-/* .cursor tracks the pointer 1:1 (transform set directly per mousemove,
-   no transition — any transition here would reintroduce lag), and
-   carries filter + mix-blend-mode itself. That placement matters:
-   .cursor is position:fixed with a z-index, which establishes a
-   stacking context — mix-blend-mode on a CHILD of that context only
-   blends within it (against nothing else in there), not against the
-   real page, and just renders as flat white. Keeping filter/blend-mode
-   on .cursor itself means the whole fixed layer blends correctly at
-   the page's top level, same as the original single-element cursor.
-   The inner .cursor__mark only ever gets transform/opacity (hover-
-   expand's width/height still lives on .cursor), so the click
-   pop/regrow animation still never touches the position transform. */
-.cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 32px;
-  pointer-events: none;
-  z-index: 99999;
-  filter: invert(1);
-  mix-blend-mode: difference;
-  will-change: transform;
-  transform: translate(-200px, -200px);
-  transition: width 0.22s ease, height 0.22s ease;
-}
-
-.cursor--expanded {
-  width: 36px;
-  height: 48px;
-}
-
-/* Hides the custom arrow while hovering a zoomed lightbox image, so
-   the native grab/grabbing cursor (styles.css .lightbox__image rules)
-   can show instead — see initCursor()'s comment. */
-.cursor--hidden-for-native {
-  opacity: 0;
-}
-
-.cursor__mark {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform-origin: 0 0;
-}
-
-@keyframes cursorPop {
-  from { transform: scale(1);    opacity: 1; }
-  to   { transform: scale(1.35); opacity: 0; }
-}
-
-@keyframes cursorGrow {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-
-.cursor__mark.pop  { animation: cursorPop 0.18s ease-out forwards; }
-.cursor__mark.grow { animation: cursorGrow 0.18s ease-out forwards; }
-
-@media (prefers-reduced-motion: reduce) {
-  .cursor__mark.pop,
-  .cursor__mark.grow {
-    animation: none !important;
-  }
 }
 
 :root {
@@ -409,9 +333,7 @@ ul { list-style: none; }
    was already isolated from the rest of the page this way, so this
    changes nothing about how it stacks against other sections; it
    only affects ordering *within* .nav, which has no descendants that
-   depend on painting above/below anything outside it. The custom
-   cursor is a separate fixed element appended to <body>, not a
-   descendant of .nav, so it's unaffected either way. */
+   depend on painting above/below anything outside it. */
 .nav--hidden {
   transform: translateY(-100%);
 }
@@ -1734,12 +1656,9 @@ ul { list-style: none; }
    Scoped to .lightbox-trigger rather than the gallery itself, so the
    same component works for the grid now and the full-width single
    image layout later — just add the class. Markup is injected once
-   by initLightbox() (script.js) and appended to <body>, the same
-   pattern the custom cursor uses, so no per-page overlay HTML is
-   hand-authored. Sits at z-index 5000: above the nav (100) and all
-   page content, below the custom cursor (99999) so the cursor still
-   renders — and still blends via mix-blend-mode: difference — on top
-   of it. See initLightbox()'s comment for why that blend survives.
+   by initLightbox() (script.js) and appended to <body>, so no
+   per-page overlay HTML is hand-authored. Sits at z-index 5000:
+   above the nav (100) and all page content.
    The open/close fade uses --transition, and reduced-motion is
    already handled globally (the *, *::before, *::after rule near the
    bottom of this file collapses all transition durations), so no
@@ -1780,8 +1699,7 @@ ul { list-style: none; }
   display: block;
   /* zoom/pan is applied as a live transform (script.js) with no
      transition of its own — wheel, pinch and drag all need to track
-     the pointer with zero lag, same reasoning as the custom cursor's
-     position never being transitioned. Disabling native touch
+     the pointer with zero lag. Disabling native touch
      gestures and drag/selection here is what lets our own pinch/pan
      handling own the gesture instead of fighting the browser's. */
   touch-action: none;
@@ -1797,19 +1715,14 @@ ul { list-style: none; }
   transition: transform var(--transition);
 }
 
-/* Shown only while hovering a currently-zoomed image with a real
-   mouse — initCursor() hides the custom arrow specifically for this
-   case (see its comment) so the browser's own grab/grabbing icon can
-   stand in as the "you can drag this" affordance, without the two
-   cursor systems rendering on top of each other. Specificity here
-   (a two-class selector) beats the sitewide `cursor: none !important`
-   reset despite the tie on !important. */
+/* A zoomed image shows grab/grabbing as its "you can drag this"
+   affordance. */
 .lightbox__image.is-zoomed {
-  cursor: grab !important;
+  cursor: grab;
 }
 
 .lightbox__image.is-zoomed.is-panning {
-  cursor: grabbing !important;
+  cursor: grabbing;
 }
 
 .lightbox__close,

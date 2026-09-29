@@ -259,126 +259,6 @@ function initHeroEmail() {
 }
 
 /* ============================================================
-   CUSTOM CURSOR — hand-drawn arrow with blend mode
-   ============================================================ */
-
-function initCursor() {
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-  /* Hand-drawn arrow cursor. The source image's tip sits at its own
-     top-left corner, so positioning the wrapper's untransformed
-     top-left (no centering offset) at the pointer coordinates lines
-     the tip up with the actual mouse position. filter:invert(1)
-     turns the black artwork white first so mix-blend-mode: difference
-     still inverts whatever background it passes over.
-
-     Position (on .cursor) and the click pop/regrow animation (on the
-     inner .cursor__mark) are kept on separate elements/properties on
-     purpose: .cursor's transform is set directly every mousemove with
-     no transition, so tracking stays 1:1 with zero lag; .cursor__mark
-     is free to animate transform/opacity for the click effect without
-     ever touching that position transform. */
-  const dot = document.createElement('div');
-  dot.className = 'cursor';
-
-  const mark = document.createElement('img');
-  mark.className = 'cursor__mark';
-  mark.src = 'images/cursor-arrow.png';
-  mark.alt = '';
-  dot.appendChild(mark);
-  dot.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(dot);
-
-  /* hover/pointer media features describe the DEVICE's capability, not
-     which input produced any given event — a touchscreen Windows
-     laptop, Surface, or iPad+trackpad still reports hover:hover and
-     pointer:fine (a real mouse/trackpad is present), so the guard
-     above passes and all of this wires up exactly as it would on a
-     plain desktop. Every tap on that touchscreen is then replayed by
-     the browser as a compatibility mouse-event sequence — mousemove,
-     mouseover, mousedown, mouseup, click, at the tap coordinates —
-     purely so old sites that only understand mouse events still work.
-     Listening for 'mousemove'/'mouseover'/'click' can't tell that
-     sequence apart from a real mouse move, which is what let taps
-     summon the cursor to wherever they landed, including onto the
-     lightbox's images and controls. Pointer Events fix this: every
-     pointer event carries the actual pointerType ('mouse', 'touch' or
-     'pen') of whatever produced it, so each listener below checks
-     that per-event instead of trusting the one-time capability check
-     to also describe the current interaction. lastPointerWasMouse is
-     tracked from 'pointerdown' (capture phase, so it's set before the
-     'click' listener below ever runs) because the plain 'click' event
-     itself carries no pointerType to check directly. */
-  let lastPointerWasMouse = true;
-
-  function hide() {
-    dot.style.transform = 'translate(-200px, -200px)';
-    dot.classList.remove('cursor--expanded');
-  }
-
-  document.addEventListener('pointerdown', e => {
-    lastPointerWasMouse = e.pointerType === 'mouse';
-    if (!lastPointerWasMouse) hide();
-  }, { capture: true });
-
-  document.addEventListener('pointermove', e => {
-    if (e.pointerType !== 'mouse') return;
-    dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-  });
-
-  document.addEventListener('mouseleave', hide);
-
-  const HOVER_TARGETS = 'a, button, [role="button"], input, textarea, select, label[for], .work__card, .award, .lightbox-trigger';
-
-  /* A zoomed lightbox image shows the browser's own grab/grabbing
-     cursor (styles.css) as its "you can drag this" affordance instead
-     of the custom arrow — two cursor renderers stacked on the same
-     point would just look broken. So the custom cursor hides itself
-     specifically while hovering .lightbox__image.is-zoomed, and
-     reappears the moment the pointer leaves it. */
-  document.addEventListener('pointerover', e => {
-    if (e.pointerType !== 'mouse') return;
-    if (e.target.closest('.lightbox__image.is-zoomed')) {
-      dot.classList.add('cursor--hidden-for-native');
-      return;
-    }
-    if (e.target.closest(HOVER_TARGETS)) dot.classList.add('cursor--expanded');
-  });
-
-  document.addEventListener('pointerout', e => {
-    if (e.pointerType !== 'mouse') return;
-    if (e.target.closest('.lightbox__image.is-zoomed')) {
-      dot.classList.remove('cursor--hidden-for-native');
-    }
-    if (e.target.closest(HOVER_TARGETS)) dot.classList.remove('cursor--expanded');
-  });
-
-  /* Click pop/regrow: "bubble pop" out, then a fresh instance grows
-     back in from 0. Chained via animationend rather than timers so it
-     can never drift out of sync with the CSS durations. A new click
-     always strips both classes and forces a reflow before restarting,
-     so rapid clicking cleanly restarts the sequence instead of
-     stacking or glitching. */
-  mark.addEventListener('animationend', e => {
-    if (e.animationName === 'cursorPop') {
-      mark.classList.remove('pop');
-      void mark.offsetWidth;
-      mark.classList.add('grow');
-    } else if (e.animationName === 'cursorGrow') {
-      mark.classList.remove('grow');
-    }
-  });
-
-  document.addEventListener('click', () => {
-    if (!lastPointerWasMouse) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    mark.classList.remove('pop', 'grow');
-    void mark.offsetWidth;
-    mark.classList.add('pop');
-  });
-}
-
-/* ============================================================
    CONTACT FORM — async Formspree submission
    ============================================================ */
 
@@ -836,13 +716,7 @@ function initBgTiles() {
    needs the same class, no JS changes). All triggers on the page
    share one sequence in DOM order, so prev/next cycles through them
    together. The overlay markup is built once and appended straight
-   to <body> — same placement as the custom cursor in initCursor()
-   above — specifically so it sits as a plain sibling in the cursor's
-   stacking context rather than nested inside anything that isolates
-   it. .lightbox itself only sets position/z-index/opacity/background,
-   never mix-blend-mode/isolation/filter on itself, so it doesn't
-   create an isolated blending group — the cursor's
-   mix-blend-mode: difference still composites correctly over it.
+   to <body>.
 
    WRAPPING: prev/next (and the arrow keys) wrap around — next() on
    the last image returns to the first, prev() on the first goes to
@@ -1102,9 +976,8 @@ function initLightbox() {
   // dblclick is reliable for real mouse double-clicks, but on a
   // hybrid touch+mouse device a double TAP also replays as two
   // synthetic mouse clicks close together, which browsers can also
-  // report as a native 'dblclick' — exactly the touch/mouse ambiguity
-  // already solved for the custom cursor in initCursor(). Track it
-  // the same way here and defer to the manual touch double-tap path
+  // report as a native 'dblclick'. Track the real pointerType from
+  // pointerdown (the dblclick event itself doesn't carry one) and defer to the manual touch double-tap path
   // (handlePossibleDoubleTap) for anything that isn't a real mouse.
   let lastImgPointerWasMouse = true;
   imgEl.addEventListener('pointerdown', e => {
@@ -1293,7 +1166,6 @@ function initContactScroll() {
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  initCursor();
   shuffleWorkCards();
   randomizeAboutBorder();
   animateNav();
