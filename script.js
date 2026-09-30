@@ -147,6 +147,7 @@ const fadeTargets = [
   '.about__title',
   '.about__bio',
   '.about__credentials',
+  '.footer__logo-wrap',
   '.footer__upper',
   '.footer__lower',
 ];

@@ -1397,9 +1397,34 @@ ul { list-style: none; }
   pointer-events: none;
 }
 
-.footer__upper {
-  padding-bottom: var(--space-lg);
+/* White export of the hero logo at the same width as .hero__logo,
+   sitting outside .container (like .hero__logo-wrap) so it centres
+   on the viewport and isn't capped by the container's max-width.
+   No blend mode or filter — the asset is already white. */
+.footer__logo-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-md);
   margin-bottom: var(--space-lg);
+}
+
+.footer__logo {
+  width: clamp(404px, 81vw, 1242px);
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .footer__logo {
+    width: clamp(269px, 81vw, 621px);
+  }
+}
+
+/* Kept tight on purpose: the sticky footer can only ever show one
+   viewport's worth of itself (anything taller is cut off at the top,
+   where the logo sits), so this gap is where the height is saved. */
+.footer__upper {
+  margin-bottom: var(--space-md);
 }
 
 .footer__heading {
@@ -1418,6 +1443,14 @@ ul { list-style: none; }
   align-items: center;
   gap: 1.75rem;
   flex-wrap: wrap;
+}
+
+/* Narrow phones: tighten the gap so the availability line (now body
+   size) still fits beside the button instead of wrapping under it. */
+@media (max-width: 400px) {
+  .footer__actions {
+    gap: 1rem;
+  }
 }
 
 .footer__btn {
@@ -1460,7 +1493,7 @@ ul { list-style: none; }
 }
 
 .footer__avail-text {
-  font-size: var(--text-small);
+  font-size: var(--text-body); /* matches .footer__contact-item */
   font-weight: 200;
   text-transform: none;
   letter-spacing: normal;
