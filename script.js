@@ -332,7 +332,7 @@ function animateHero() {
 
 /* ============================================================
    HERO TEXTURES — mouse-travel texture switcher
-   Every 420px of mouse travel across the hero, and every click on the
+   Every 588px of mouse travel across the hero, and every click on the
    hero background, advances to the next texture. The first mouse move
    over the hero brings in the first texture; until then no layer is
    visible and the paper tiles show through. Travel only counts while
@@ -341,10 +341,11 @@ function animateHero() {
    jump. Clicking a link or button (hero contact links, nav) holds the
    current texture and zeroes the counter instead of advancing.
 
-   Order: cycles of 32 built as alternating groups of four — 4 dark,
-   4 light, 4 dark … (16 of each) — with each group's textures drawn at
-   random from its folder and none repeated within a cycle. Every new
-   cycle draws from the full pool again.
+   Order: cycles of 32 built as alternating groups of four — 4 light,
+   4 dark, 4 light … (16 of each), so the first texture shown is always
+   light — with each group's textures drawn at random from its folder
+   and none repeated within a cycle. Every new cycle draws from the full
+   pool again.
 
    Each switch crossfades the texture in over the current one and
    flips the hero ink (logo + text) to white on dark textures, black
@@ -389,9 +390,9 @@ function initHeroTextures() {
   const stage = document.getElementById('heroTextures');
   if (!hero || !stage) return;
 
-  const STEP = 420;          // px of mouse travel per texture
+  const STEP = 588;          // px of mouse travel per texture
   const GROUP = 4;           // textures per tone group
-  const CYCLE_GROUPS = 8;    // groups per cycle (4 dark + 4 light = 32)
+  const CYCLE_GROUPS = 8;    // groups per cycle (4 light + 4 dark = 32)
   const BG_CONCURRENCY = 2;  // parallel background requests
 
   /* ---- Order ---- */
@@ -418,7 +419,7 @@ function initHeroTextures() {
     const d = shuffled(darks);
     const l = shuffled(lights);
     for (let g = 0; g < CYCLE_GROUPS; g++) {
-      const from = g % 2 === 0 ? d : l;
+      const from = g % 2 === 0 ? l : d;   // light group first
       from.splice(0, GROUP).forEach(tex => order.push({ tex, group: groups }));
       groups++;
     }
