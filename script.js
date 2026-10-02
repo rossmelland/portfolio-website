@@ -108,9 +108,64 @@ function initLogoSwap() {
   const navHeight = nav.offsetHeight;
   const observer = new IntersectionObserver(([entry]) => {
     nav.classList.toggle('nav--past-hero', !entry.isIntersecting);
+    navTone.pastHero = !entry.isIntersecting;
+    updateNavTone();
   }, { rootMargin: `-${navHeight}px 0px 0px 0px`, threshold: 0 });
 
   observer.observe(hero);
+
+  hero.addEventListener('herotone', e => {
+    navTone.heroDark = e.detail.dark;
+    updateNavTone();
+  });
+
+  // White hover stamps are only used over dark textures; fetch them
+  // early so the first hover there isn't blank.
+  ['work', 'about', 'contact'].forEach(name => {
+    new Image().src = `images/textures/nav-stamp-${name}-white.png`;
+  });
+}
+
+/* ============================================================
+   NAV — ink over the hero
+   White over dark hero textures, black otherwise. Driven by the
+   'herotone' event initHeroTextures fires in the same task that starts
+   each crossfade, and by initLogoSwap's past-the-hero observer, which
+   is the same boundary the logo swap already uses: the hero's bottom
+   edge passing the bottom of the nav bar. Crossing it back to black is
+   a single class change run as one smooth .nav--ink-flip transition,
+   and the observer only fires on an actual crossing, so the nav can't
+   strobe while the hero scrolls away.
+   ============================================================ */
+// menuOpen: the mobile menu panel is cream, so the nav stays black over it.
+const navTone = { heroDark: false, pastHero: false, menuOpen: false };
+let navFlipTimer = null;
+
+function updateNavTone(snap = false) {
+  const onDark = navTone.heroDark && !navTone.pastHero && !navTone.menuOpen;
+  if (onDark === nav.classList.contains('nav--on-dark')) return;
+
+  // The mobile menu panel shows and hides instantly, so the ink switches
+  // with it (.nav--ink-snap) instead of fading white-on-cream.
+  if (snap) {
+    clearTimeout(navFlipTimer);
+    nav.classList.remove('nav--ink-flip');
+    nav.classList.add('nav--ink-snap');
+    nav.classList.toggle('nav--on-dark', onDark);
+    void nav.offsetWidth;
+    nav.classList.remove('nav--ink-snap');
+    return;
+  }
+
+  // .nav--ink-flip and the colour change land in one style change, so
+  // the flip runs on the hero fade's timing; the class comes off after,
+  // handing hover and scroll transitions back their own timing.
+  const ms = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue('--hero-fade-duration')) || 900;
+  nav.classList.add('nav--ink-flip');
+  nav.classList.toggle('nav--on-dark', onDark);
+  clearTimeout(navFlipTimer);
+  navFlipTimer = setTimeout(() => nav.classList.remove('nav--ink-flip'), ms + 50);
 }
 
 initMobileMenuPortal();
@@ -121,6 +176,8 @@ if (navToggle) {
     navToggle.classList.toggle('open', isOpen);
     navToggle.setAttribute('aria-expanded', String(isOpen));
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    navTone.menuOpen = isOpen;
+    updateNavTone(true);
   });
 }
 
@@ -131,6 +188,8 @@ if (navLinks) {
       navToggle.classList.remove('open');
       navToggle.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
+      navTone.menuOpen = false;
+      updateNavTone(true);
     });
   });
 }
@@ -229,6 +288,316 @@ function animateHero() {
         el.style.transform = 'translateY(0)';
       });
     });
+  });
+}
+
+/* ============================================================
+   HERO TEXTURES — mouse-travel texture switcher
+   Every 420px of mouse travel across the hero, and every click on the
+   hero background, advances to the next texture. The first mouse move
+   over the hero brings in the first texture; until then no layer is
+   visible and the paper tiles show through. Travel only counts while
+   the pointer is over the hero: leaving it, or the tab/window losing
+   focus, forgets the last position, so coming back doesn't add the
+   jump. Clicking a link or button (hero contact links, nav) holds the
+   current texture and zeroes the counter instead of advancing.
+
+   Order: cycles of 32 built as alternating groups of four — 4 dark,
+   4 light, 4 dark … (16 of each) — with each group's textures drawn at
+   random from its folder and none repeated within a cycle. Every new
+   cycle draws from the full pool again.
+
+   Each switch crossfades the texture in over the current one and
+   flips the hero ink (logo + text) to white on dark textures, black
+   on light. The ink flip is a class toggled in the same task that
+   starts the image fade, and both share --hero-fade (styles.css), so
+   they run as one 900ms ease-in-out transition.
+
+   Loading: the sequence is known up front, so loading follows it by
+   group. On page load only the first group of four is requested.
+   After each switch, the rest of the current group plus the whole
+   next group are kept requested (the very next texture at high
+   priority), so the next tone flip is always loading a group early.
+   The white logo loads once the black one has. Once the page has
+   loaded and the browser is idle, the rest of the first cycle, then
+   the textures it didn't use, trickle in two at a time at low
+   priority (skipped under Save-Data). If the next texture still isn't
+   loaded when a switch is due, a loaded one from the same group is
+   pulled forward instead and the slow one keeps its place, so a
+   switch is never blank or dropped and the 4/4 tone rhythm holds;
+   only when nothing in the group is loaded yet does the switch wait.
+   ============================================================ */
+
+// hero-texture-light-25 is not on disk yet — raise light to 25 when it is.
+const HERO_TEXTURE_COUNT = { light: 24, dark: 25 };
+
+function heroTexturePool() {
+  const pool = [];
+  ['light', 'dark'].forEach(tone => {
+    for (let n = 1; n <= HERO_TEXTURE_COUNT[tone]; n++) {
+      const id = String(n).padStart(2, '0');
+      pool.push({
+        url:  `images/hero-textures/${tone}/hero-texture-${tone}-${id}.webp`,
+        dark: tone === 'dark',
+      });
+    }
+  });
+  return pool;
+}
+
+function initHeroTextures() {
+  const hero  = document.getElementById('hero');
+  const stage = document.getElementById('heroTextures');
+  if (!hero || !stage) return;
+
+  const STEP = 420;          // px of mouse travel per texture
+  const GROUP = 4;           // textures per tone group
+  const CYCLE_GROUPS = 8;    // groups per cycle (4 dark + 4 light = 32)
+  const BG_CONCURRENCY = 2;  // parallel background requests
+
+  /* ---- Order ---- */
+
+  // Entries are { tex, group }; group is a running index across cycles,
+  // so a group stays identifiable after entries are reordered.
+  const pool  = heroTexturePool();
+  const darks = pool.filter(t => t.dark);
+  const lights = pool.filter(t => !t.dark);
+  const order = [];
+  let cursor = 0;            // index in order of the next texture to show
+  let groups = 0;
+
+  function shuffled(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function extendOrder() {
+    const d = shuffled(darks);
+    const l = shuffled(lights);
+    for (let g = 0; g < CYCLE_GROUPS; g++) {
+      const from = g % 2 === 0 ? d : l;
+      from.splice(0, GROUP).forEach(tex => order.push({ tex, group: groups }));
+      groups++;
+    }
+  }
+
+  function at(i) {
+    while (order.length <= i) extendOrder();
+    return order[i];
+  }
+
+  /* ---- Loading ---- */
+
+  const loads  = new Map(); // url -> Promise<boolean>
+  const ready  = new Set(); // urls loaded
+  const failed = new Set(); // urls that errored
+  const queue  = [];
+  let active = 0;
+  let pumping = false;
+  let whiteLoaded = false;
+
+  function load(tex, priority) {
+    if (!loads.has(tex.url)) {
+      loads.set(tex.url, new Promise(resolve => {
+        const img = new Image();
+        if ('fetchPriority' in img) img.fetchPriority = priority;
+        img.onload  = () => { ready.add(tex.url); resolve(true); };
+        img.onerror = () => { failed.add(tex.url); resolve(false); };
+        img.src = tex.url;
+      }));
+    }
+    return loads.get(tex.url);
+  }
+
+  function pump() {
+    if (!pumping) return;
+    while (active < BG_CONCURRENCY && queue.length) {
+      const tex = queue.shift();
+      if (loads.has(tex.url)) continue;
+      active++;
+      load(tex, 'low').then(() => { active--; pump(); });
+    }
+  }
+
+  function startBackground() {
+    if (pumping) return;
+    pumping = true;
+    pump();
+  }
+
+  // Request from the cursor to the end of the group `extra` groups on.
+  function loadAhead(firstPriority, extra) {
+    const last = at(cursor).group + extra;
+    for (let i = cursor; at(i).group <= last; i++) {
+      load(at(i).tex, i === cursor ? firstPriority : 'auto');
+    }
+  }
+
+  loadAhead('auto', 0);
+  const firstCycle = order.slice(0, GROUP * CYCLE_GROUPS).map(e => e.tex);
+  queue.push(...firstCycle, ...pool.filter(t => !firstCycle.includes(t)));
+
+  const saveData = navigator.connection && navigator.connection.saveData;
+  if (!saveData) {
+    const idle = window.requestIdleCallback || (cb => setTimeout(cb, 200));
+    const begin = () => idle(startBackground);
+    if (document.readyState === 'complete') begin();
+    else window.addEventListener('load', begin, { once: true });
+  }
+
+  // White logo: only needed for dark textures, so it waits for the
+  // black logo rather than competing with it on first paint.
+  const blackLogo = hero.querySelector('.hero__logo:not(.hero__logo--white)');
+  const whiteLogo = hero.querySelector('.hero__logo--white');
+  const whiteReady = new Promise(resolve => {
+    if (!whiteLogo || !whiteLogo.dataset.src) return resolve();
+    const go = () => {
+      whiteLogo.addEventListener('load', resolve, { once: true });
+      whiteLogo.addEventListener('error', resolve, { once: true });
+      whiteLogo.src = whiteLogo.dataset.src;
+    };
+    if (!blackLogo || blackLogo.complete) go();
+    else {
+      blackLogo.addEventListener('load', go, { once: true });
+      blackLogo.addEventListener('error', go, { once: true });
+    }
+  }).then(() => { whiteLoaded = true; });
+
+  /* ---- Crossfade ---- */
+
+  // Each switch fades a layer in on top of the visible stack. A layer is
+  // only freed for reuse once a layer above it has finished fading in
+  // (so it is fully covered), never while it might still show through.
+  // Fast mouse runs therefore grow the stack instead of recycling a
+  // visible layer, and paper can't flash through a half-faded texture.
+  const stack = []; // visible layers, bottom → top
+  const free  = []; // hidden layers ready for reuse
+
+  function takeLayer() {
+    if (free.length) return free.pop();
+    const img = document.createElement('img');
+    img.className = 'hero__texture';
+    img.alt = '';
+    img.decoding = 'async';
+    img.addEventListener('transitionend', e => {
+      if (e.propertyName !== 'opacity' || !img.classList.contains('is-in')) return;
+      const i = stack.indexOf(img);
+      if (i > 0) stack.splice(0, i).forEach(releaseLayer);
+    });
+    return img;
+  }
+
+  function releaseLayer(img) {
+    img.style.transition = 'none';
+    img.classList.remove('is-in');
+    img.removeAttribute('src');
+    free.push(img);
+  }
+
+  async function display(tex) {
+    const ok = await load(tex, 'high');
+    if (tex.dark) await whiteReady;
+    if (!ok) return;
+
+    const layer = takeLayer();
+    layer.style.transition = 'none';
+    layer.classList.remove('is-in');
+    layer.src = tex.url;
+    try { await layer.decode(); } catch (e) { /* swap anyway */ }
+
+    stack.push(layer);
+    stage.appendChild(layer);
+    void layer.offsetWidth;          // commit opacity 0 before fading
+    layer.style.transition = '';
+    layer.classList.add('is-in');
+    hero.classList.toggle('hero--dark', tex.dark);
+    hero.dispatchEvent(new CustomEvent('herotone', { detail: { dark: tex.dark } }));
+  }
+
+  /* ---- Advance ---- */
+
+  const isReady = tex => ready.has(tex.url) && (!tex.dark || whiteLoaded);
+
+  // Next texture in sequence, or, if that one isn't loaded yet, a
+  // loaded one from the same group swapped into its place.
+  function nextTexture() {
+    while (failed.has(at(cursor).tex.url)) order.splice(cursor, 1);
+    const group = order[cursor].group;
+    for (let i = cursor; at(i).group === group; i++) {
+      if (!isReady(at(i).tex)) continue;
+      if (i !== cursor) order.splice(cursor, 0, order.splice(i, 1)[0]);
+      break;
+    }
+    return order[cursor++].tex;
+  }
+
+  // Switches run one after another, so none is skipped and they always
+  // land in sequence order.
+  let chain = Promise.resolve();
+
+  function advance() {
+    const tex = nextTexture();
+    loadAhead('high', 1);
+    chain = chain.then(() => display(tex));
+  }
+
+  /* ---- Pointer ---- */
+
+  let last = null;       // last pointer position over the hero
+  let travelled = 0;
+  let started = false;
+
+  const forget = () => { last = null; };
+  const hold = () => { travelled = 0; last = null; };
+
+  hero.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const moves = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    if (!moves.length) moves.push(e);
+
+    if (!started) {
+      started = true;
+      advance();
+    }
+    for (const m of moves) {
+      if (last) travelled += Math.hypot(m.clientX - last.x, m.clientY - last.y);
+      last = { x: m.clientX, y: m.clientY };
+    }
+    if (travelled >= STEP) {
+      travelled = 0;
+      advance();
+    }
+  });
+
+  hero.addEventListener('pointerleave', forget);
+  window.addEventListener('blur', forget);
+  document.addEventListener('visibilitychange', forget);
+
+  // Links and buttons (in the hero or the nav) hold the current texture
+  // and zero the counter; any other click in the hero is a background
+  // click and advances. Middle/modifier clicks open links too, so
+  // auxclick holds as well.
+  const INTERACTIVE = 'a, button, input, select, textarea, label, [role="button"]';
+  const isControl = e => e.target instanceof Element && e.target.closest(INTERACTIVE);
+
+  document.addEventListener('click', e => {
+    const inHero = hero.contains(e.target);
+    if (isControl(e) && (inHero || e.target.closest('#nav'))) {
+      hold();
+      return;
+    }
+    if (!inHero || e.detail === 0) return;   // detail 0: keyboard, not a click
+    started = true;
+    travelled = 0;
+    advance();
+  });
+
+  document.addEventListener('auxclick', e => {
+    if (isControl(e)) hold();
   });
 }
 
@@ -1180,6 +1549,7 @@ document.addEventListener('DOMContentLoaded', () => {
   randomizeAboutBorder();
   animateNav();
   animateHero();
+  initHeroTextures();
   initHeroEmail();
   applyFadeClasses();
   applyStaggerDelays();

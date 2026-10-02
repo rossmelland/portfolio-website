@@ -373,7 +373,8 @@ ul { list-style: none; }
 }
 
 /* Homepage-only logo crossfade (script.js's initLogoSwap): the
-   wordmark (about-title.png, ~2.41:1) and the square mark stacked in
+   wordmark (nav-ross-black.png, ~2.41:1, plus its white twin for dark
+   hero textures) and the square mark stacked in
    one fixed-width frame, both left-aligned at its top-left corner, so
    swapping which one is opaque never changes the frame's own box —
    .nav__links never moves. Width is fixed to the WIDER asset (the
@@ -481,7 +482,7 @@ ul { list-style: none; }
 .nav__toggle {
   display: none;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   background: none;
   border: none;
   cursor: pointer;
@@ -490,8 +491,9 @@ ul { list-style: none; }
 
 .nav__toggle span {
   display: block;
-  width: 22px;
-  height: 1px;
+  width: 32px;
+  height: 7px;
+  border-radius: 2px;
   background: var(--color-text);
   transition: var(--transition);
 }
@@ -509,13 +511,71 @@ ul { list-style: none; }
   color: var(--color-text);
 }
 
-.nav--light-section .nav__toggle span {
-  background: var(--color-text);
-}
-
 .nav.scrolled.nav--light-section {
   background: rgba(250, 247, 240, 0.92);
   border-bottom-color: var(--color-border);
+}
+
+/* Nav over the homepage hero inverts with the active texture
+   (script.js's updateNavTone): .nav--on-dark while the hero is under
+   the nav and showing a dark texture, never once past the hero.
+   .nav--ink-flip is added for the length of each flip so these
+   changes run on the hero crossfade's own duration and easing; outside
+   a flip the usual transitions (hover, scroll state) keep their own
+   timing. On mobile .nav__links is moved out of .nav (see
+   initMobileMenuPortal), so the fullscreen menu keeps its black links. */
+.nav__logo .nav__logo-img--word-white {
+  opacity: 0;
+  mix-blend-mode: normal;
+}
+
+.nav--on-dark .nav__logo-img--word {
+  opacity: 0;
+}
+
+.nav--on-dark .nav__logo-img--word-white {
+  opacity: 1;
+}
+
+.nav--on-dark .nav__links a {
+  color: #FFFFFF;
+}
+
+.nav--on-dark .nav__links a:hover {
+  color: var(--color-text);
+}
+
+.nav--on-dark .nav__link--work    { --stamp-image: url('images/textures/nav-stamp-work-white.png'); }
+.nav--on-dark .nav__link--about   { --stamp-image: url('images/textures/nav-stamp-about-white.png'); }
+.nav--on-dark .nav__link--contact { --stamp-image: url('images/textures/nav-stamp-contact-white.png'); }
+
+.nav--on-dark .nav__toggle span {
+  background: #FFFFFF;
+}
+
+.nav.scrolled.nav--on-dark {
+  background: rgba(13, 13, 13, 0.55);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Menu open/close: colours switch instantly with the panel; the icon
+   keeps only its transform transition, so the cross still animates */
+.nav--ink-snap,
+.nav--ink-snap .nav__logo-img,
+.nav--ink-snap .nav__links a {
+  transition: none;
+}
+
+.nav--ink-snap .nav__toggle span {
+  transition-property: transform;
+}
+
+.nav--ink-flip,
+.nav--ink-flip .nav__logo-img,
+.nav--ink-flip .nav__links a,
+.nav--ink-flip .nav__toggle span {
+  transition-duration: var(--hero-fade-duration);
+  transition-timing-function: var(--hero-fade-ease);
 }
 
 /* ============================================================
@@ -534,6 +594,88 @@ ul { list-style: none; }
   padding-bottom: var(--space-md);
 }
 
+/* ------------------------------------------------------------
+   HERO TEXTURES — mouse-driven texture switcher (initHeroTextures
+   in script.js). Image layers sit at the same z-index as
+   .bg-tiles--hero but later in the DOM, so they paint over the paper
+   tiles; with no layer visible (before the first mouse move) the
+   paper shows through. --hero-ink is registered so it interpolates:
+   one transition on .hero drives every text colour in lockstep with
+   the image crossfade, and both use --hero-fade.
+   ------------------------------------------------------------ */
+
+@property --hero-ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0D0D0D;
+}
+
+/* Shared by the hero crossfade and the nav ink flip (script.js reads
+   the duration too), so every part of a texture switch moves as one.
+   Symmetric ease-in-out (easeInOutSine-like): gentle start and end. */
+:root {
+  --hero-fade-duration: 900ms;
+  --hero-fade-ease: cubic-bezier(0.37, 0, 0.63, 1);
+  --hero-fade: var(--hero-fade-duration) var(--hero-fade-ease);
+}
+
+.hero {
+  --hero-ink: var(--color-text);
+  transition: --hero-ink var(--hero-fade);
+}
+
+.hero--dark {
+  --hero-ink: #FFFFFF;
+}
+
+.hero__textures {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.hero__texture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--hero-fade);
+}
+
+.hero__texture.is-in {
+  opacity: 1;
+}
+
+/* Black logo and white logo stacked; dark textures crossfade them */
+.hero__logo-stack {
+  position: relative;
+  display: block;
+}
+
+.hero__logo {
+  transition: opacity var(--hero-fade);
+}
+
+.hero__logo--white {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  mix-blend-mode: normal;
+}
+
+.hero--dark .hero__logo {
+  opacity: 0;
+}
+
+.hero--dark .hero__logo--white {
+  opacity: 1;
+}
+
 .hero__logo-wrap {
   flex: 1;
   display: flex;
@@ -543,7 +685,10 @@ ul { list-style: none; }
 }
 
 .hero__logo {
-  width: clamp(404px, 81vw, 1242px);
+  /* Square horse icon: sized off both width and height so it sits
+     comfortably above the bio on short and wide screens alike */
+  width: clamp(240px, min(36vw, 46vh), 460px);
+  width: clamp(240px, min(36vw, 46svh), 460px);
   height: auto;
   display: block;
   mix-blend-mode: multiply;
@@ -577,7 +722,7 @@ ul { list-style: none; }
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
-  color: var(--color-text);
+  color: var(--hero-ink);
   cursor: pointer;
   transition: opacity var(--transition);
   text-align: left;
@@ -592,12 +737,7 @@ ul { list-style: none; }
 
 .hero__email-icon {
   flex-shrink: 0;
-  color: var(--color-text-muted);
-  transition: color var(--transition);
-}
-
-.hero__email:hover .hero__email-icon {
-  color: var(--color-text);
+  color: var(--hero-ink);
 }
 
 .hero__copied {
@@ -605,7 +745,7 @@ ul { list-style: none; }
   font-weight: 200;
   text-transform: none;
   letter-spacing: normal;
-  color: var(--color-accent);
+  color: var(--hero-ink);
   opacity: 0;
   transition: opacity 0.35s ease;
   flex-shrink: 0;
@@ -627,12 +767,7 @@ ul { list-style: none; }
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
-  color: var(--color-text-muted);
-  transition: color var(--transition);
-}
-
-.hero__social-link:hover {
-  color: var(--color-text);
+  color: var(--hero-ink);
 }
 
 .hero__bio {
@@ -641,14 +776,16 @@ ul { list-style: none; }
   text-transform: none;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  color: var(--color-text);
+  color: var(--hero-ink);
   text-align: left;
   flex: 1;
   min-width: 0;
   max-width: 860px;
 }
 
-@media (max-width: 640px) {
+/* Stack contact above the bio once a side-by-side bio column would
+   drop under ~480px and wrap past four lines */
+@media (max-width: 900px) {
   .hero__bottom {
     flex-direction: column;
     align-items: flex-start;
@@ -658,11 +795,16 @@ ul { list-style: none; }
   .hero__bio {
     flex: none;
     max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero__bio {
     font-size: var(--text-subhead);
   }
 
   .hero__logo {
-    width: clamp(269px, 81vw, 621px);
+    width: clamp(180px, 56vw, 300px);
   }
 }
 
@@ -1397,7 +1539,7 @@ ul { list-style: none; }
   pointer-events: none;
 }
 
-/* White export of the hero logo at the same width as .hero__logo,
+/* White export of the wordmark at the width the hero wordmark used,
    sitting outside .container (like .hero__logo-wrap) so it centres
    on the viewport and isn't capped by the container's max-width.
    No blend mode or filter — the asset is already white. */
@@ -1659,12 +1801,14 @@ ul { list-style: none; }
   }
 
 
+  /* Each line centre sits (7px line + 6px gap) / 2 = 6.5px from the
+     icon centre: slide both onto it, then rotate into the cross */
   .nav__toggle.open span:first-child {
-    transform: rotate(45deg) translate(4px, 4px);
+    transform: translateY(6.5px) rotate(45deg);
   }
 
   .nav__toggle.open span:last-child {
-    transform: rotate(-45deg) translate(4px, -4px);
+    transform: translateY(-6.5px) rotate(-45deg);
   }
 
   .hero {
