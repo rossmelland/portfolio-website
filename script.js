@@ -273,7 +273,7 @@ function animateHero() {
   const items = [
     { selector: '.hero__logo-wrap', delay: 0.05 },
     { selector: '.hero__contact',   delay: 0.22 },
-    { selector: '.hero__bio',       delay: 0.32 },
+    { selector: '.hero__intro',     delay: 0.32 },
   ];
 
   items.forEach(({ selector, delay }) => {

@@ -472,6 +472,7 @@ ul { list-style: none; }
 }
 
 .nav__link--work    { --stamp-image: url('images/textures/nav-stamp-work.png');    --stamp-ratio: calc(418 / 176); }
+.nav__link--awards  { --stamp-image: url('images/textures/nav-stamp-contact.png'); --stamp-ratio: calc(562 / 176); }
 .nav__link--about   { --stamp-image: url('images/textures/nav-stamp-about.png');   --stamp-ratio: calc(475 / 176); }
 .nav__link--contact { --stamp-image: url('images/textures/nav-stamp-contact.png'); --stamp-ratio: calc(562 / 176); }
 
@@ -551,6 +552,7 @@ ul { list-style: none; }
 }
 
 .nav--on-dark .nav__link--work    { --stamp-image: url('images/textures/nav-stamp-work-white.png'); }
+.nav--on-dark .nav__link--awards  { --stamp-image: url('images/textures/nav-stamp-contact-white.png'); }
 .nav--on-dark .nav__link--about   { --stamp-image: url('images/textures/nav-stamp-about-white.png'); }
 .nav--on-dark .nav__link--contact { --stamp-image: url('images/textures/nav-stamp-contact-white.png'); }
 
@@ -775,6 +777,19 @@ ul { list-style: none; }
   color: var(--hero-ink);
 }
 
+/* Bio + location, right-aligned to the container's right edge */
+.hero__intro {
+  flex: 1;
+  min-width: 0;
+  max-width: 860px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
 .hero__bio {
   font-size: var(--text-display);
   font-weight: 600;
@@ -782,24 +797,56 @@ ul { list-style: none; }
   line-height: 1.25;
   letter-spacing: -0.02em;
   color: var(--hero-ink);
-  text-align: left;
-  flex: 1;
-  min-width: 0;
-  max-width: 860px;
+  text-wrap: balance; /* even line lengths, no lone "Designer." */
 }
 
-/* Stack contact above the bio once a side-by-side bio column would
-   drop under ~480px and wrap past four lines */
-@media (max-width: 900px) {
+/* Mirrors .footer__avail (same dot and gap; text matches the hero social
+   links, as the footer's does), with the dot on the right. Both follow --hero-ink, so they invert with the texture
+   on the shared crossfade timing. */
+.hero__location {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.hero__location-text {
+  font-size: 1.15rem; /* matches .hero__social-link */
+  font-weight: 200; /* PP Mori Extralight */
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--hero-ink);
+}
+
+.hero__location-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hero-ink);
+  flex-shrink: 0;
+  animation: avail-pulse 2.2s ease-in-out infinite;
+}
+
+/* Stack contact above the bio once the bio can no longer sit on one
+   line beside the contact links (it first wraps at ~968px) */
+@media (max-width: 1000px) {
   .hero__bottom {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-md);
   }
 
-  .hero__bio {
+  /* Stacked: bio + location left-align under the contact links */
+  .hero__intro {
     flex: none;
+    margin-left: 0;
     max-width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  /* Left-aligned, so the dot leads the line */
+  .hero__location-dot {
+    order: -1;
   }
 }
 
@@ -1594,11 +1641,18 @@ ul { list-style: none; }
   flex-wrap: wrap;
 }
 
-/* Narrow phones: tighten the gap so the availability line (now body
-   size) still fits beside the button instead of wrapping under it. */
+/* Narrow phones: tighten the gap and the button's side padding so the
+   availability line (1.15rem bold, matching the hero social links)
+   still fits beside the button instead of wrapping under it, which
+   would grow the footer. */
 @media (max-width: 400px) {
   .footer__actions {
     gap: 1rem;
+  }
+
+  .footer__actions .footer__btn {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 }
 
@@ -1642,8 +1696,8 @@ ul { list-style: none; }
 }
 
 .footer__avail-text {
-  font-size: var(--text-body); /* matches .footer__contact-item */
-  font-weight: 200;
+  font-size: 1.15rem; /* matches .hero__social-link */
+  font-weight: 200; /* PP Mori Extralight */
   text-transform: none;
   letter-spacing: normal;
   color: #FAF7F0;
