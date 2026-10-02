@@ -240,10 +240,10 @@ main {
 
 .awards__icon {
   position: absolute;
-  top: -10px;
+  top: -7.5px; /* ~7% of the icon's height tucked behind the Work band */
   right: 1.5rem; /* matches .award's own right padding, so it lines up
                     with the right edge of the award__year column */
-  width: 100px;
+  width: 75px;
   height: auto;
 }
 
@@ -1061,10 +1061,57 @@ ul { list-style: none; }
   text-align: right;
 }
 
-.award:hover .award__name,
-.award:hover .award__org,
-.award:hover .award__desc,
-.award:hover .award__year {
+/* Hover text: a cream copy of the row's text (.award__invert, built by
+   initAwardInvert in script.js) is uncovered by the same left-to-right
+   sweep as the band, so text is cream exactly where the band is and
+   stays black everywhere else, frame by frame. clip-path inset and
+   scaleX share duration and easing, so the two edges stay together,
+   including when a hover reverses mid-way. The copy is generated
+   content in an aria-hidden layer: not selectable, not found by
+   find-in-page, not announced. Its grid inherits the row's, and its
+   spans reuse the column classes, so it lays out identically at every
+   breakpoint. */
+.award__invert {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: inherit;
+  gap: inherit;
+  padding: inherit;
+  align-items: inherit;
+  pointer-events: none;
+  user-select: none;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.4s ease;
+}
+
+.award:hover .award__invert {
+  clip-path: inset(0 0 0 0);
+}
+
+.award__invert > span {
+  color: #FAF7F0;
+}
+
+.award__invert > span::after {
+  content: attr(data-text);
+  content: attr(data-text) / "";
+}
+
+/* While text in a row is selected, drop the band and the copy so the
+   selection highlight on the real text isn't covered */
+.award--selecting::before,
+.award--selecting .award__invert {
+  visibility: hidden;
+}
+
+/* Without the script there's no copy layer: fall back to recolouring
+   the real text */
+.award:not(.award--invert-ready):hover .award__name,
+.award:not(.award--invert-ready):hover .award__org,
+.award:not(.award--invert-ready):hover .award__desc,
+.award:not(.award--invert-ready):hover .award__year {
   color: #FAF7F0;
 }
 

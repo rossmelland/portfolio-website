@@ -233,6 +233,45 @@ function observeFadeElements() {
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 }
 
+/* ============================================================
+   AWARDS — hover text inversion
+   Builds each row's .award__invert layer: an aria-hidden copy of the
+   four columns whose text is CSS generated content (data-text), so it
+   is never selected, copied, found by find-in-page or announced. The
+   real text stays in place, black, as the only readable copy. See the
+   .award__invert comment in styles.css for how the reveal tracks the
+   band.
+   ============================================================ */
+
+function initAwardInvert() {
+  const rows = document.querySelectorAll('.award');
+  if (!rows.length) return;
+
+  rows.forEach(row => {
+    const layer = document.createElement('div');
+    layer.className = 'award__invert';
+    layer.setAttribute('aria-hidden', 'true');
+    row.querySelectorAll(':scope > span').forEach(src => {
+      const copy = document.createElement('span');
+      copy.className = src.className;
+      copy.dataset.text = src.textContent.trim();
+      layer.appendChild(copy);
+    });
+    row.appendChild(layer);
+    row.classList.add('award--invert-ready');
+  });
+
+  // A selection inside a hovered row would sit under the band and the
+  // copy; drop both on rows the selection touches.
+  document.addEventListener('selectionchange', () => {
+    const sel = document.getSelection();
+    const range = sel && !sel.isCollapsed && sel.rangeCount ? sel.getRangeAt(0) : null;
+    rows.forEach(row => {
+      row.classList.toggle('award--selecting', !!range && range.intersectsNode(row));
+    });
+  });
+}
+
 /* Apply JS-driven stagger delays after shuffle so order is correct */
 function applyStaggerDelays() {
   // Work cards sit in a 2-up grid — stagger the right-column card in each row
@@ -1553,6 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroEmail();
   applyFadeClasses();
   applyStaggerDelays();
+  initAwardInvert();
   initScrollParallax();
   initBgTiles();
   initContactScroll();
