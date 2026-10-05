@@ -1386,6 +1386,29 @@ ul { list-style: none; }
   margin-bottom: 0;
 }
 
+/* BODY BOLD for the inline Challenge / Insight / Solution labels. Set
+   explicitly so the browser's default 700 doesn't fall back to a
+   synthesized bold; the paragraph text itself stays at 400. */
+.project-body__copy strong {
+  font-weight: 600;
+}
+
+/* SUBHEAD role for named sections inside a case study (e.g. licensing
+   product ranges). Each subsection reserves --space-xl above it, the
+   same rhythm as the galleries, so images can be dropped in later. */
+.project-subsection {
+  margin-top: var(--space-xl);
+}
+
+.project-subhead {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
 /* Reusable stacked image grid for case-study pages — two-per-row, square,
    matching the homepage .work__grid sizing via the same --grid-gap
    variables. No overlay, hover, or link behavior; that's a later step. */
@@ -1449,6 +1472,11 @@ ul { list-style: none; }
   text-transform: uppercase;
   color: #0D0D0D;
   margin-top: var(--space-md);
+}
+
+/* One credit per line: stacked credits sit tight under the first */
+.project-credit + .project-credit {
+  margin-top: 0.5rem;
 }
 
 .nav__back-link {
